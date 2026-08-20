@@ -130,6 +130,80 @@ function labeledBlockProducts(lines: string[]): Array<MortgageProductData & { co
   return products;
 }
 
+function compactProductCardProducts(lines: string[]): Array<MortgageProductData & { confidence: number }> {
+  const products: Array<MortgageProductData & { confidence: number }> = [];
+  const seen = new Set<string>();
+  const isProductCode = (line: string | undefined) => /^(?=.*\d)[A-Z][A-Z0-9-]{3,}$/i.test(line?.trim() ?? "");
+
+  for (let rateLabelIndex = 0; rateLabelIndex < lines.length; rateLabelIndex += 1) {
+    if (lines[rateLabelIndex].trim().toLowerCase() !== "initial rate") continue;
+
+    const codeIndex = Array.from({ length: Math.min(rateLabelIndex, 8) }, (_, offset) => rateLabelIndex - offset - 1)
+      .find(index => isProductCode(lines[index]));
+    if (codeIndex === undefined) continue;
+
+    const code = lines[codeIndex].trim();
+    const product = lines[codeIndex + 1]?.trim();
+    if (!product || labeledFieldFor(product) || /^(?:until|initial rate|svr|aprc|ltv|product fee|incentives)$/i.test(product)) continue;
+
+    let endIndex = lines.length;
+    for (let cursor = rateLabelIndex + 1; cursor < lines.length; cursor += 1) {
+      if (/^full product details$/i.test(lines[cursor]) || isProductCode(lines[cursor])) {
+        endIndex = cursor;
+        break;
+      }
+    }
+
+    const valueAfter = (label: string) => {
+      const labelIndex = lines.slice(codeIndex, endIndex).findIndex(line => line.trim().toLowerCase() === label);
+      return labelIndex === -1 ? undefined : lines[codeIndex + labelIndex + 1];
+    };
+    const rateValue = valueAfter("initial rate");
+    const rate = percentageFromValue(rateValue);
+    if (rate === null) continue;
+
+    const key = `${code}|${product}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const ltvValue = valueAfter("ltv");
+    const aprcValue = valueAfter("aprc");
+    const feeValue = valueAfter("product fee");
+    const until = lines.slice(codeIndex, rateLabelIndex).find(line => /^until\s+/i.test(line));
+    const term = product.match(/\b(\d{1,2})\s*(?:year|yr)\b/i);
+    const evidence = [code, product, `Initial rate: ${rateValue}`];
+    if (aprcValue) evidence.push(`APRC: ${aprcValue}`);
+    if (ltvValue) evidence.push(`LTV: ${ltvValue}`);
+    if (feeValue) evidence.push(`Product fee: ${feeValue}`);
+    if (until) evidence.push(until);
+
+    products.push({
+      code,
+      product,
+      purpose: /\b(?:buy\s*to\s*let|btl)\b/i.test(product) ? "Buy to Let" : null,
+      maxLtv: percentageFromValue(ltvValue),
+      rate,
+      aprc: percentageFromValue(aprcValue),
+      productFee: feeValue ? Number(feeValue.replace(/[^0-9.]/g, "")) || null : null,
+      incentives: null,
+      cashback: null,
+      ercs: null,
+      endDate: until?.replace(/^until\s+/i, "") ?? null,
+      segment: null,
+      term: term ? Number(term[1]) : null,
+      basis: /\btracker\b/i.test(product) ? "Tracker" : /\bdiscount\b/i.test(product) ? "Discount" : /\bfixed\b/i.test(product) ? "Fixed" : null,
+      blank: null,
+      sourceEvidence: evidence,
+      extractionNotes: LOCAL_EXTRACTION_NOTE,
+      confidence: 0.82,
+    });
+
+    rateLabelIndex = Math.max(rateLabelIndex, endIndex - 1);
+  }
+
+  return products;
+}
+
 function lineByLineRateProducts(lines: string[]): Array<MortgageProductData & { confidence: number }> {
   const unique = new Set<string>();
   return lines.flatMap((line, index) => {
@@ -168,8 +242,9 @@ function lineByLineRateProducts(lines: string[]): Array<MortgageProductData & { 
 /** Local deterministic parser for users who do not want a hosted AI service. */
 export function extractMortgageProductsLocally(sourceUrl: string, renderedText: string): ExtractedProductsResponse {
   const lines = renderedText.split(/\n+/).map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean);
-  const labeledProducts = labeledBlockProducts(lines);
-  const products = labeledProducts.length > 0 ? labeledProducts : lineByLineRateProducts(lines);
+  const compactProducts = compactProductCardProducts(lines);
+  const labeledProducts = compactProducts.length > 0 ? [] : labeledBlockProducts(lines);
+  const products = compactProducts.length > 0 ? compactProducts : labeledProducts.length > 0 ? labeledProducts : lineByLineRateProducts(lines);
   return { products, additionalNotes: products.length ? [] : ["No rate-bearing rows were recognized by the local rule parser."], pageClassification: products.length ? "product_page" : "no_product_data" };
 }
 

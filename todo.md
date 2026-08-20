@@ -69,3 +69,5 @@
 - [x] Commit and push the manual CAPTCHA recovery and flexible CSV/XLSX/public-link import workflow to GitHub, then save a restorable checkpoint.
 - [x] Verify commit 5052003f95408d4d73ddbe601e8d40f60f29f78d is present on the public GitHub main branch.
 - [x] Save a final checkpoint containing the manual CAPTCHA recovery and flexible spreadsheet-import workflow.
+- [x] Diagnose the failed Newcastle for Intermediaries product-page capture and extraction path.
+- [x] Add and validate the smallest compatible fix or clear user-recovery guidance for the Newcastle product page.

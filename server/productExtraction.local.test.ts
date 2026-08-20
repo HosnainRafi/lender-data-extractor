@@ -81,6 +81,50 @@ describe("extractMortgageProductsLocally", () => {
     ]));
   });
 
+  it("groups Newcastle compact product cards where the code is followed by the title and labeled values", () => {
+    const result = extractMortgageProductsLocally("https://newcastleforintermediaries.co.uk/products/our-product-range", [
+      "EBRT319",
+      "2 Year Base Rate Tracker",
+      "Until 30 November 2028",
+      "Initial rate",
+      "4.35%",
+      "SVR",
+      "6.31%",
+      "APRC",
+      "6.20%",
+      "LTV",
+      "80%",
+      "Product fee",
+      "£999",
+      "Incentives",
+      "10% overpayments",
+      "Full product details",
+      "FIIX773",
+      "5 Year Fixed Rate",
+      "Until 30 November 2031",
+      "Initial rate",
+      "5.15%",
+      "SVR",
+      "6.31%",
+      "APRC",
+      "6.00%",
+      "LTV",
+      "80%",
+      "Product fee",
+      "£999",
+      "Full product details",
+    ].join("\n"));
+
+    expect(result).toMatchObject({ pageClassification: "product_page", additionalNotes: [] });
+    expect(result.products).toHaveLength(2);
+    const tracker = result.products.find(product => product.code === "EBRT319");
+    const fixed = result.products.find(product => product.code === "FIIX773");
+    expect(tracker).toMatchObject({ product: "2 Year Base Rate Tracker", aprc: 0.062, maxLtv: 0.8, productFee: 999, term: 2, basis: "Tracker", confidence: 0.82 });
+    expect(fixed).toMatchObject({ product: "5 Year Fixed Rate", aprc: 0.06, maxLtv: 0.8, productFee: 999, term: 5, basis: "Fixed", confidence: 0.82 });
+    expect(tracker?.rate).toBeCloseTo(0.0435, 10);
+    expect(fixed?.rate).toBeCloseTo(0.0515, 10);
+  });
+
   it("does not invent product records where the rendered page contains no rate", () => {
     const result = extractMortgageProductsLocally("https://example-lender.test/about", "Welcome to Example Lender. Contact us for product information.");
     expect(result).toMatchObject({ pageClassification: "no_product_data", products: [] });
