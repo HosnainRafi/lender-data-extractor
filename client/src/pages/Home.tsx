@@ -1,33 +1,115 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { trpc } from "@/lib/trpc";
+import { AlertCircle, ArrowUpRight, CheckCircle2, ClipboardCheck, Clock3, Database, Download, FileSpreadsheet, Loader2, Play, RefreshCw, RotateCcw, ShieldCheck, SlidersHorizontal, Sparkles, TableProperties, UploadCloud } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+
+const statusTone = {
+  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  failed: "border-red-200 bg-red-50 text-red-700",
+  pending: "border-amber-200 bg-amber-50 text-amber-800",
+  running: "border-sky-200 bg-sky-50 text-sky-700",
+};
+
+function dateLabel(value: Date | string | null | undefined) {
+  if (!value) return "Not yet scraped";
+  return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function downloadFile(name: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 /**
  * All content in this page are only for example, replace with your own feature implementation
  * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
  */
 export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const utils = trpc.useUtils();
+  const [reviewId, setReviewId] = useState<number | null>(null);
+  const [reviewJson, setReviewJson] = useState("");
+  const [cronExpression, setCronExpression] = useState("0 0 3 * * *");
+  const dashboard = trpc.lenders.dashboard.useQuery(undefined, { refetchInterval: 15_000 });
+  const products = trpc.lenders.products.useQuery(undefined, { refetchInterval: 15_000 });
+  const refresh = trpc.refresh.get.useQuery();
+  const jsonExport = trpc.lenders.exportJson.useQuery(undefined, { enabled: false });
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+  const invalidate = async () => {
+    await Promise.all([utils.lenders.dashboard.invalidate(), utils.lenders.products.invalidate(), utils.refresh.get.invalidate()]);
+  };
+  const syncSources = trpc.lenders.syncSources.useMutation({ onSuccess: async result => { toast.success(`${result.imported} lender records synchronized.`); await invalidate(); }, onError: error => toast.error(error.message) });
+  const run = trpc.lenders.run.useMutation({ onSuccess: async job => { toast.success(`Scrape segment processed: ${job?.processedLenders ?? 0} of ${job?.totalLenders ?? 0}.`); await invalidate(); }, onError: error => toast.error(error.message) });
+  const continueRun = trpc.lenders.continueRun.useMutation({ onSuccess: async () => { toast.success("Next persisted scrape segment completed."); await invalidate(); }, onError: error => toast.error(error.message) });
+  const cancelRun = trpc.lenders.cancelRun.useMutation({ onSuccess: async () => { toast.success("Queued browser batch cancelled."); await invalidate(); }, onError: error => toast.error(error.message) });
+  const exportWorkbook = trpc.lenders.exportWorkbook.useMutation({ onSuccess: result => { window.open(result.url, "_blank", "noopener,noreferrer"); toast.success("Reference-format workbook generated."); }, onError: error => toast.error(error.message) });
+  const updateProduct = trpc.lenders.updateProduct.useMutation({ onSuccess: async () => { toast.success("Product review saved."); setReviewId(null); await invalidate(); }, onError: error => toast.error(error.message) });
+  const saveRefresh = trpc.refresh.save.useMutation({ onSuccess: async () => { toast.success("Refresh settings saved."); await invalidate(); }, onError: error => toast.error(error.message) });
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
+  const reviewProduct = useMemo(() => products.data?.find(product => product.id === reviewId), [products.data, reviewId]);
+  const busy = syncSources.isPending || run.isPending || continueRun.isPending || cancelRun.isPending;
+  const hasQueued = dashboard.data?.jobs.find(job => job.status === "queued");
+  const currentCron = refresh.data?.cronExpression ?? cronExpression;
+
+  return <DashboardLayout>
+    <div className="mx-auto max-w-[1560px] space-y-7 pb-12" id="overview">
+      <section className="relative overflow-hidden rounded-[1.6rem] border border-white/70 bg-[linear-gradient(130deg,oklch(0.29_0.065_226)_0%,oklch(0.37_0.09_210)_60%,oklch(0.51_0.11_187)_120%)] p-7 text-white shadow-[0_22px_70px_-34px_oklch(0.22_0.05_230_/_0.75)] sm:p-10">
+        <div className="absolute -right-14 -top-20 h-72 w-72 rounded-full bg-amber-100/20 blur-3xl" />
+        <div className="absolute bottom-0 right-[20%] h-40 w-40 rounded-full border border-white/15" />
+        <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+          <div className="max-w-2xl">
+            <div className="mb-4 flex items-center gap-2 text-sm font-medium text-teal-50/90"><Sparkles className="h-4 w-4" /> Browser-captured mortgage intelligence</div>
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">A cleaner path from lender pages to decision-ready data.</h1>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-teal-50/80 sm:text-base">Synchronize your source list, render every lender page through a secure browser session, then review and export product records in the supplied workbook format.</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => syncSources.mutate()} disabled={busy} className="bg-white text-slate-900 hover:bg-teal-50"><UploadCloud className="mr-2 h-4 w-4" /> Sync sources</Button>
+            <Button onClick={() => run.mutate({ lenderId: null, trigger: "manual" })} disabled={busy || !dashboard.data?.summary.lenders} variant="outline" className="border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white"><Play className="mr-2 h-4 w-4" /> Run browser batch</Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: "Lenders ready", value: dashboard.data?.summary.lenders ?? "—", helper: "Across both supplied sources", icon: Database, tone: "bg-teal-100 text-teal-800" },
+          { label: "Current products", value: dashboard.data?.summary.currentProducts ?? "—", helper: "Captured product records", icon: TableProperties, tone: "bg-sky-100 text-sky-800" },
+          { label: "Needs review", value: dashboard.data?.summary.pendingReview ?? "—", helper: "AI-extracted, awaiting sign-off", icon: ClipboardCheck, tone: "bg-amber-100 text-amber-800" },
+          { label: "Capture exceptions", value: dashboard.data?.summary.failedLenders ?? "—", helper: "Browser or extraction failures", icon: AlertCircle, tone: "bg-rose-100 text-rose-800" },
+        ].map(item => <Card key={item.label} className="border-white/80 bg-card/85 shadow-sm backdrop-blur"><CardContent className="flex items-start justify-between p-5"><div><p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{item.label}</p><p className="mt-2 text-3xl font-semibold tracking-tight">{item.value}</p><p className="mt-2 text-xs text-muted-foreground">{item.helper}</p></div><div className={`rounded-2xl p-3 ${item.tone}`}><item.icon className="h-5 w-5" /></div></CardContent></Card>)}
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.65fr_0.85fr]" id="lenders">
+        <Card className="overflow-hidden border-white/80 bg-card/90 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between border-b bg-white/40 py-5"><div><CardTitle className="text-lg">Lender capture ledger</CardTitle><CardDescription>Source URLs, browser state, and the latest capture outcome.</CardDescription></div><Button size="sm" variant="outline" onClick={() => syncSources.mutate()} disabled={busy}><RefreshCw className={`mr-2 h-4 w-4 ${syncSources.isPending ? "animate-spin" : ""}`} /> Refresh list</Button></CardHeader>
+          <CardContent className="p-0"><div className="max-h-[520px] overflow-auto"><table className="w-full min-w-[900px] text-left text-sm"><thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase tracking-[0.1em] text-slate-500"><tr><th className="px-5 py-3 font-medium">Lender</th><th className="px-5 py-3 font-medium">Website</th><th className="px-5 py-3 font-medium">Product page</th><th className="px-5 py-3 font-medium">Last scrape</th><th className="px-5 py-3 font-medium">Status</th><th className="px-5 py-3" /></tr></thead><tbody className="divide-y divide-slate-100">{dashboard.data?.lenders.map(lender => <tr key={lender.id} className="group hover:bg-teal-50/35"><td className="px-5 py-4 font-medium text-slate-800">{lender.name}<div className="mt-1 text-xs font-normal text-muted-foreground">{lender.productCount} active products</div></td><td className="px-5 py-4"><a className="inline-flex max-w-[190px] items-center gap-1 truncate text-xs text-slate-500 hover:text-primary" href={lender.mainWebsiteUrl ?? undefined} target="_blank" rel="noreferrer">{lender.mainWebsiteUrl ? new URL(lender.mainWebsiteUrl).hostname : "—"}<ArrowUpRight className="h-3 w-3 shrink-0" /></a></td><td className="px-5 py-4"><a className="inline-flex max-w-[210px] items-center gap-1 truncate text-xs text-primary hover:underline" href={lender.productPageUrl ?? undefined} target="_blank" rel="noreferrer">{lender.productPageUrl ? "Product source" : "Not mapped"}<ArrowUpRight className="h-3 w-3 shrink-0" /></a></td><td className="px-5 py-4 text-xs text-muted-foreground">{dateLabel(lender.lastScrapedAt)}</td><td className="px-5 py-4"><Badge variant="outline" className={`capitalize ${statusTone[lender.scrapeStatus]}`}>{lender.scrapeStatus}</Badge></td><td className="flex justify-end gap-1 px-5 py-4"><Button size="sm" variant="ghost" title="Download lender JSON" onClick={() => { const lenderProducts = products.data?.filter(product => product.lenderId === lender.id) ?? []; downloadFile(`${lender.normalizedName || "lender"}-products.json`, JSON.stringify(lenderProducts, null, 2), "application/json"); toast.success(`${lender.name} JSON downloaded.`); }}><Download className="h-3.5 w-3.5" /></Button><Button size="sm" variant={lender.scrapeStatus === "failed" ? "outline" : "ghost"} onClick={() => run.mutate({ lenderId: lender.id, trigger: lender.scrapeStatus === "failed" ? "retry" : "manual" })} disabled={busy}>{lender.scrapeStatus === "failed" ? <><RotateCcw className="mr-1.5 h-3.5 w-3.5" />Retry</> : <><Play className="mr-1.5 h-3.5 w-3.5" />Run</>}</Button></td></tr>)}{!dashboard.data?.lenders.length && <tr><td colSpan={6} className="px-5 py-14 text-center text-sm text-muted-foreground">Sync the supplied Google Sheets to load the lender queue.</td></tr>}</tbody></table></div></CardContent>
+        </Card>
+        <div className="space-y-5">
+          <Card className="border-white/80 bg-card/90 shadow-sm"><CardHeader className="pb-3"><CardTitle className="text-base">Batch progress</CardTitle><CardDescription>Each run safely processes up to six browser captures.</CardDescription></CardHeader><CardContent className="space-y-4">{hasQueued ? <><div className="flex items-center justify-between text-sm"><span className="font-medium">{hasQueued.processedLenders} of {hasQueued.totalLenders} complete</span><Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800">Queued</Badge></div><Progress value={hasQueued.totalLenders ? (hasQueued.processedLenders / hasQueued.totalLenders) * 100 : 0} /><div className="grid grid-cols-2 gap-2"><Button onClick={() => continueRun.mutate({ jobId: hasQueued.id })} disabled={busy}><Play className="mr-2 h-4 w-4" /> Continue</Button><Button variant="outline" onClick={() => cancelRun.mutate({ jobId: hasQueued.id })} disabled={busy}>Cancel</Button></div></> : <div className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-muted-foreground">No persisted capture segments are waiting. Start a batch whenever you are ready.</div>}</CardContent></Card>
+          <Card className="border-white/80 bg-card/90 shadow-sm"><CardHeader className="pb-3"><CardTitle className="text-base">Latest exceptions</CardTitle><CardDescription>Click retry from the lender table after resolving access issues.</CardDescription></CardHeader><CardContent className="space-y-3">{dashboard.data?.errors.length ? dashboard.data.errors.map(({ attempt, lenderName }) => <div key={attempt.id} className="rounded-xl border border-rose-100 bg-rose-50/60 p-3"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">{lenderName}</span><Badge variant="outline" className="border-rose-200 bg-white text-rose-700">{attempt.errorCategory}</Badge></div><p className="mt-1 line-clamp-2 text-xs leading-5 text-rose-700/85">{attempt.errorMessage}</p></div>) : <div className="flex items-center gap-2 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800"><CheckCircle2 className="h-4 w-4" /> No recent browser exceptions.</div>}</CardContent></Card>
+        </div>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.65fr_0.85fr]" id="review">
+        <Card className="border-white/80 bg-card/90 shadow-sm"><CardHeader className="flex-row items-center justify-between border-b bg-white/40 py-5"><div><CardTitle className="text-lg">Product review queue</CardTitle><CardDescription>Inspect AI-derived fields and source evidence before export.</CardDescription></div><Button size="sm" variant="outline" onClick={() => products.refetch()}><RefreshCw className="mr-2 h-4 w-4" /> Update</Button></CardHeader><CardContent className="p-0"><div className="max-h-[430px] overflow-auto"><table className="w-full min-w-[840px] text-left text-sm"><thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-[0.1em] text-slate-500"><tr><th className="px-5 py-3 font-medium">Product</th><th className="px-5 py-3 font-medium">Lender</th><th className="px-5 py-3 font-medium">Rate / LTV</th><th className="px-5 py-3 font-medium">Lifecycle</th><th className="px-5 py-3 font-medium">Confidence</th><th className="px-5 py-3" /></tr></thead><tbody className="divide-y divide-slate-100">{products.data?.map(product => <tr key={product.id} className="hover:bg-teal-50/35"><td className="px-5 py-4 font-medium">{product.data.product}<div className="mt-1 text-xs font-normal text-muted-foreground">{product.data.purpose ?? "Purpose not supplied"}</div></td><td className="px-5 py-4 text-sm text-slate-600">{product.lenderName}</td><td className="px-5 py-4 text-sm text-slate-600">{product.data.rate !== null ? `${(product.data.rate * 100).toFixed(2)}%` : "—"} <span className="text-muted-foreground">/</span> {product.data.maxLtv !== null ? `${(product.data.maxLtv * 100).toFixed(0)}%` : "—"}</td><td className="px-5 py-4"><Badge variant="outline" className="capitalize">{product.lifecycle}</Badge></td><td className="px-5 py-4"><span className="font-medium text-slate-700">{Math.round(Number(product.confidence) * 100)}%</span></td><td className="px-5 py-4 text-right"><Button size="sm" variant="ghost" onClick={() => { setReviewId(product.id); setReviewJson(JSON.stringify(product.data, null, 2)); }}>Review</Button></td></tr>)}{!products.data?.length && <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-muted-foreground">Product rows appear here after a successful browser capture.</td></tr>}</tbody></table></div></CardContent></Card>
+        <div className="space-y-5">
+          <Card className="border-white/80 bg-card/90 shadow-sm"><CardHeader className="pb-3"><CardTitle className="text-base">Export centre</CardTitle><CardDescription>Download only reviewed application data or generate the exact workbook structure.</CardDescription></CardHeader><CardContent className="space-y-3"><Button className="w-full justify-start" onClick={() => exportWorkbook.mutate()} disabled={exportWorkbook.isPending}><FileSpreadsheet className="mr-2 h-4 w-4" /> {exportWorkbook.isPending ? "Building reference workbook…" : "Export Excel workbook"}</Button><Button className="w-full justify-start" variant="outline" onClick={async () => { const result = await jsonExport.refetch(); if (result.data) { downloadFile("lender-products.json", JSON.stringify(result.data, null, 2), "application/json"); toast.success("Structured JSON downloaded."); } }}><Download className="mr-2 h-4 w-4" /> Download product JSON</Button><div className="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-muted-foreground">The exporter starts with your supplied workbook template and preserves its Introduction, Current Products, New Products, Withdrawn Products, and Additional sheets.</div></CardContent></Card>
+          <Card className="border-white/80 bg-card/90 shadow-sm" id="refresh"><CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-base"><Clock3 className="h-4 w-4 text-primary" /> Refresh cadence</CardTitle><CardDescription>UTC cron; one secure browser segment runs per scheduled tick.</CardDescription></CardHeader><CardContent className="space-y-3"><Input value={cronExpression} placeholder={currentCron} onChange={event => setCronExpression(event.target.value)} /><Select value={refresh.data?.isEnabled ? "enabled" : "paused"} onValueChange={value => saveRefresh.mutate({ cronExpression, isEnabled: value === "enabled" })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="enabled">Enabled</SelectItem><SelectItem value="paused">Paused</SelectItem></SelectContent></Select><Button className="w-full" variant="outline" onClick={() => saveRefresh.mutate({ cronExpression, isEnabled: refresh.data?.isEnabled ?? false })} disabled={saveRefresh.isPending}><SlidersHorizontal className="mr-2 h-4 w-4" /> Save schedule</Button><p className="text-xs leading-5 text-muted-foreground"><ShieldCheck className="mr-1 inline h-3.5 w-3.5 text-emerald-600" /> Autoscale-safe: the database keeps each unfinished batch ready for the next manual or scheduled continuation.</p></CardContent></Card>
+        </div>
+      </section>
     </div>
-  );
+    <Dialog open={Boolean(reviewProduct)} onOpenChange={open => !open && setReviewId(null)}><DialogContent className="max-w-3xl"><DialogHeader><DialogTitle>Review product record</DialogTitle><DialogDescription>All fields are editable as structured JSON. Keep unknown values as `null`; do not infer values without source evidence.</DialogDescription></DialogHeader><Textarea className="min-h-[380px] font-mono text-xs leading-5" value={reviewJson} onChange={event => setReviewJson(event.target.value)} /><DialogFooter><Button variant="outline" onClick={() => setReviewId(null)}>Cancel</Button><Button onClick={() => { if (!reviewProduct) return; try { const data = JSON.parse(reviewJson); updateProduct.mutate({ productId: reviewProduct.id, reviewStatus: "edited", data }); } catch { toast.error("The product JSON is not valid."); } }} disabled={updateProduct.isPending}>{updateProduct.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save reviewed record</Button></DialogFooter></DialogContent></Dialog>
+  </DashboardLayout>;
 }

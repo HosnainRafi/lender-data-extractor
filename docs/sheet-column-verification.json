@@ -1,0 +1,22 @@
+[
+  {
+    "source": "Lender Data Update",
+    "spreadsheet_id": "1YAHBvkhX83RYZiuEjo4C6l55kdOo6DjkWWlsDzvyNno",
+    "gid": "0",
+    "column_g_index": 7,
+    "column_g_header": "",
+    "column_j_index": 10,
+    "column_j_header": null,
+    "column_count": 7
+  },
+  {
+    "source": "LENDER LIST - FINAL",
+    "spreadsheet_id": "1Tx0uHOEZqzgB8yufiemO3A6xRzAo0op0WocbQfiIY2A",
+    "gid": "1794590520",
+    "column_g_index": 7,
+    "column_g_header": "Main Website",
+    "column_j_index": 10,
+    "column_j_header": "Products",
+    "column_count": 26
+  }
+]

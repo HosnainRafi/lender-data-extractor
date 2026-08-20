@@ -1,0 +1,92 @@
+SHEET: Current Products
+DIMENSIONS: 283 rows x 16 columns
+ROW 2: [None, None, None, None, None, None, 'This is for internal or intermediary use only, and should not be distributed to potential borrowers or other customers.', None, None, None, None, None, None, None, None, None]
+ROW 5: [None, 'Current Mortgage Products', None, None, None, None, None, datetime.datetime(2026, 8, 20, 0, 0), None, None, None, None, None, None, None, None]
+ROW 8: [None, 'Created By', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 9: [None, 'Newbould', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 11: [None, 'Approved By', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 14: [None, 'Matrix Date', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 15: [None, datetime.datetime(2026, 8, 20, 0, 0), None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 27: ['VIS1', 'VIS2', 'VIS3', 'VIS4', 'VIS5', 'VIS6', 'VIS7', 'VIS8', 'VIS9', 'VIS10', 'VIS11', 'HID1', 'HID2', 'HID3', 'HID4', 'HID5']
+ROW 28: ['Code', 'Product', 'Purpose', 'Max. LTV', 'Rate', 'APRC', 'Product Fee', 'Incentives', 'Cashback', 'ERCs', 'End Date', 'Segment', 'Term', 'Basis', 'Blank', 1]
+ROW 29: ['Residential Mortgages (First Time Buyer)', None, None, None, None, None, None, None, None, None, None, 'VAN', 0, 0, '=IF(SUM(O30:O71)=0,0,1)', '=IF(SUM(P30:P71)=0,0,1)']
+ROW 30: [61168, '2 Year Bank of England Base Rate Tracker - No ERC', 'First Time Buyer', 0.65, 0.0419, 0.072862211, 999, 'Valuation', 0, 'No', '30/11/2028', 'VAN', 2, 'Tracker', 1, '=IF(A30=0,0,1)']
+ROW 31: [76770, '2 Year Fixed Rate', 'First Time Buyer', 0.65, 0.0464, 0.073810943, 999, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A31=0,0,1)']
+ROW 32: [76769, '2 Year Fixed Rate - No Fee', 'First Time Buyer', 0.65, 0.0488, 0.073871069, 0, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A32=0,0,1)']
+ROW 33: [61167, '2 Year Bank of England Base Rate Tracker - No ERC', 'First Time Buyer', 0.75, 0.0426, 0.073009147, 999, 'Valuation', 0, 'No', '30/11/2028', 'VAN', 2, 'Tracker', 1, '=IF(A33=0,0,1)']
+ROW 34: [76773, '2 Year Fixed Rate', 'First Time Buyer', 0.75, 0.0461, 0.073776367, 1499, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A34=0,0,1)']
+ROW 35: [76772, '2 Year Fixed Rate', 'First Time Buyer', 0.75, 0.0471, 0.073959741, 999, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A35=0,0,1)']
+ROW 36: [76771, '2 Year Fixed Rate - No Fee', 'First Time Buyer', 0.75, 0.0491, 0.07393413, 0, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A36=0,0,1)']
+ROW 37: [76775, '2 Year Fixed Rate', 'First Time Buyer', 0.8, 0.047, 0.073967083, 1499, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A37=0,0,1)']
+ROW 38: [76774, '2 Year Fixed Rate', 'First Time Buyer', 0.8, 0.0475, 0.074044396, 999, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A38=0,0,1)']
+ROW 39: [76690, '2 Year Fixed Rate', 'First Time Buyer', 0.85, 0.0485, 0.074285655, 1499, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A39=0,0,1)']
+ROW 40: [76693, '2 Year Fixed Rate', 'First Time Buyer', 0.85, 0.049, 0.074362977, 999, 'Valuation', 0, 'Yes', '30/11/2028', 'VAN', 2, 'Fixed', 1, '=IF(A40=0,0,1)']
+FREEZE: None
+FILTER: None
+MERGES: ['A270:K270', 'A201:K201', 'A275:K275', 'A250:K250', 'A228:K228', 'A124:K124', 'A218:K218', 'A243:K243', 'A273:K273', 'A238:K238', 'A195:K195', 'H5:J5', 'A204:K204', 'A188:K188', 'A259:K259', 'A262:K262', 'A209:K209', 'A72:K72', 'A29:K29', 'A265:K265', 'A152:K152', 'G2:J3']
+---
+SHEET: New Products
+DIMENSIONS: 36 rows x 16 columns
+ROW 2: [None, None, None, None, None, None, 'This is for internal or intermediary use only, and should not be distributed to potential borrowers or other customers.', None, None, None, None, None, None, None, None, None]
+ROW 5: [None, 'New Mortgage Products', None, None, None, None, None, datetime.datetime(2026, 8, 20, 0, 0), None, None, None, None, None, None, None, None]
+ROW 8: [None, 'Created By', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 9: [None, 'See Current Products Sheet', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 11: [None, 'Approved By', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 12: [None, 'See Current Products Sheet', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 14: [None, 'Matrix Date', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 15: [None, 'See Current Products Sheet', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 30: ['VIS1', 'VIS2', 'VIS3', 'VIS4', 'VIS5', 'VIS6', 'VIS7', 'VIS8', 'VIS9', 'VIS10', 'VIS11', 'HID1', 'HID2', 'HID3', 'HID4', 'HID5']
+ROW 31: ['Code', 'Product', 'Purpose', 'Max. LTV', 'Rate', 'APRC', 'Product Fee', 'Incentives', 'Cashback', 'ERCs', 'End Date', 'Segment', 'Term', 'Basis', 'Blank', 1]
+ROW 32: ['Limited Company Buy to Let Mortgages', None, None, None, None, None, None, None, None, None, None, 'LTD', 0, 0, '=IF(SUM(O33:O36)=0,0,1)', '=IF(SUM(P33:P36)=0,0,1)']
+ROW 33: [76752, '2 Year Fixed Rate', 'Purchase & Remortgage', 0.75, 0.0523, 0.076980108, 1499, 'None', 0, 'Yes', '31/10/2028', 'LTD', 2, 'Fixed', 1, '=IF(A33=0,0,1)']
+ROW 34: [76751, '2 Year Fixed Rate - No Fee', 'Purchase & Remortgage', 0.75, 0.0542, 0.076859964, 0, 'None', 0, 'Yes', '31/10/2028', 'LTD', 2, 'Fixed', 1, '=IF(A34=0,0,1)']
+ROW 35: [76753, '5 Year Fixed Rate', 'Purchase & Remortgage', 0.75, 0.0521, 0.073191292, 1499, 'None', 0, 'Yes', '31/10/2031', 'LTD', 5, 'Fixed', 1, '=IF(A35=0,0,1)']
+ROW 36: [76750, '5 Year Fixed Rate - No Fee', 'Purchase & Remortgage', 0.75, 0.0531, 0.07313569, 0, 'None', 0, 'Yes', '31/10/2031', 'LTD', 5, 'Fixed', 1, '=IF(A36=0,0,1)']
+FREEZE: None
+FILTER: None
+MERGES: ['H5:J5', 'A32:K32', 'G2:J3']
+---
+SHEET: Withdrawn Products
+DIMENSIONS: 36 rows x 16 columns
+ROW 2: [None, None, None, None, None, None, 'This is for internal or intermediary use only, and should not be distributed to potential borrowers or other customers.', None, None, None, None, None, None, None, None, None]
+ROW 5: [None, 'Withdrawn Mortgage Products', None, None, None, None, None, datetime.datetime(2026, 8, 20, 0, 0), None, None, None, None, None, None, None, None]
+ROW 8: [None, 'Created By', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 9: [None, 'See Current Products Sheet', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 11: [None, 'Approved By', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 12: [None, 'See Current Products Sheet', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 14: [None, 'Matrix Date', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 15: [None, 'See Current Products Sheet', None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 30: ['VIS1', 'VIS2', 'VIS3', 'VIS4', 'VIS5', 'VIS6', 'VIS7', 'VIS8', 'VIS9', 'VIS10', 'VIS11', 'HID1', 'HID2', 'HID3', 'HID4', 'HID5']
+ROW 31: ['Code', 'Product', 'Purpose', 'Max. LTV', 'Rate', 'APRC', 'Product Fee', 'Incentives', 'Cashback', 'ERCs', 'End Date', 'Segment', 'Term', 'Basis', 'Blank', 1]
+ROW 32: ['Limited Company Buy to Let Mortgages', None, None, None, None, None, None, None, None, None, None, 'LTD', 0, 0, '=IF(SUM(O33:O36)=0,0,1)', '=IF(SUM(P33:P36)=0,0,1)']
+ROW 33: [76450, '2 Year Fixed Rate', 'Purchase & Remortgage', 0.75, 0.0516, 0.077022408, 1499, 'None', 0, 'Yes', '31/10/2028', 'LTD', 2, 'Fixed', 1, '=IF(A33=0,0,1)']
+ROW 34: [76451, '2 Year Fixed Rate - No Fee', 'Purchase & Remortgage', 0.75, 0.0531, 0.076715776, 0, 'None', 0, 'Yes', '31/10/2028', 'LTD', 2, 'Fixed', 1, '=IF(A34=0,0,1)']
+ROW 35: [76455, '5 Year Fixed Rate', 'Purchase & Remortgage', 0.75, 0.0511, 0.072982319, 1499, 'None', 0, 'Yes', '31/10/2031', 'LTD', 5, 'Fixed', 1, '=IF(A35=0,0,1)']
+ROW 36: [76456, '5 Year Fixed Rate - No Fee', 'Purchase & Remortgage', 0.75, 0.0521, 0.072814257, 0, 'None', 0, 'Yes', '31/10/2031', 'LTD', 5, 'Fixed', 1, '=IF(A36=0,0,1)']
+FREEZE: None
+FILTER: None
+MERGES: ['H5:J5', 'A32:K32', 'G2:J3']
+---
+SHEET: Additional
+DIMENSIONS: 191 rows x 21 columns
+ROW 2: [None, None, None, None, None, None, None, None, None, None, None, None, 'This is for internal or intermediary use only, and should not be distributed to potential borrowers or other customers.', None, None, None, None, None, None, None, None]
+ROW 5: [None, 'Current Mortgage Products', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 8: [None, 'Our…', None, None, None, 0.0774, None, None, None, 'Our…', None, None, None, 0.0804, None, None, None, None, None, None, None]
+ROW 9: [None, 'Standard Variable Rate', None, None, None, None, None, None, None, 'Buy to Let Variable Rate', None, None, None, None, None, None, None, None, None, None, None]
+ROW 13: [None, 'Our Reversion Periods', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 15: [None, 'Our 2 Year Limited Company Buy to Let products offer a 1.00% BVR discount for a further 3 years.', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 16: [None, 'For example, a Limited Company 2-year fixed rate ending 31/08/2028 will revert to 7.04% until 31/08/2031 and then on to our BVR.', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 18: [None, 'We do not offer a discounted reversion period on any other products.', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 21: [None, 'Our Bank of England Base Rate Tracker Products', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 23: [None, 'Our Bank of England Base Rate Tracker Products track the Bank of England Base Rate plus an additional interest rate loading.', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 24: [None, 'The interest rates quoted in this document reflect the combination of the current Bank of England Base Rate plus the additional interest rate loading.', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 25: [None, 'All Bank of England Base Rate Tracker Products have a minimum interest rate floor of 0.50%.', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 28: [None, 'Our Reach Residential Products', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 30: [None, 'For mainstream applicants who are applying for more than 75% LTV, and whose credit score means they aren’t eligible for a standard mainstream product but have a ‘decision in principle’ confirming a product from the Reach Mortgage range can be selected. Standard affordability and lending criteria will still need to be met.', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 34: [None, 'Our Shared Ownership Products', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 36: [None, "Our Shared Ownership products are available up to 95% Borrower's Share for purchases and remortgages for partial staircasing only, and available up to 90% Borrower's Share for like-for-like remortgages and property-related capital raising remortgages.", None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+ROW 40: [None, 'Our Loan to Value', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+FREEZE: None
+FILTER: None
+MERGES: ['B57:F58', 'D75:E76', 'N92:O93', 'B40:H40', 'H123:J123', 'C142:E142', 'H132:J132', 'D66:F66', 'B91:C93', 'B84:C85', 'F109:H109', 'B15:T15', 'F74:J74', 'F8:H10', 'B21:L21', 'K120:M120', 'B67:C67', 'D79:E80', 'B142:B143', 'B123:G123', 'B60:F62', 'B94:C95', 'J9:M9', 'D94:E95', 'R5:T5', 'K124:M124', 'N94:O95', 'B130:H130', 'F96:O99', 'K121:M121', 'B43:T43', 'K74:M74', 'B96:C97', 'H134:J134', 'B75:C80', 'D96:E97', 'B64:C64', 'K123:M123', 'H122:J122', 'B102:G102', 'B73:C74', 'M132:O132', 'F91:O91', 'B89:O89', 'C113:E113', 'F75:J83', 'C143:E143', 'C112:E112', 'B98:C99', 'F94:J95', 'C133:E133', 'F84:O85', 'G133:G135', 'B66:C66', 'G142:G144', 'B13:G13', 'H138:J138', 'K92:M93', 'M136:O136', 'H140:J140', 'C106:E106', 'K75:M83', 'H124:J124', 'M134:O134', 'K94:M95', 'D91:E93', 'D67:F67', 'G47:U47', 'H126:J126', 'H135:J135', 'P57:T57', 'B48:T48', 'I105:K105', 'H125:J125', 'C104:E104', 'L133:L137', 'M110:T111', 'B87:T87', 'F104:H104', 'B47:F47', 'B81:C81', 'D81:E81', 'B53:F54', 'H144:J144', 'M140:O140', 'G138:G140', 'F106:H106', 'N8:P10', 'P53:T54', 'M133:O133', 'I57:M59', 'F105:H105', 'M135:O135', 'H139:J139', 'B82:C82', 'B46:H46', 'K125:M125', 'I109:K109', 'F107:H107', 'B52:E52', 'B34:L34', 'C136:E136', 'B28:L28', 'B36:T37', 'B133:B134', 'D84:E85', 'I108:K108', 'B83:C83', 'M105:T107', 'D83:E83', 'M142:O142', 'B121:G121', 'I104:K104', 'D77:E78', 'F108:H108', 'C107:E107', 'B122:G122', 'M2:T3', 'B30:T31', 'B71:G71', 'H143:J143', 'M144:O144', 'I106:K106', 'I53:M54', 'B120:G120', 'H133:J133', 'B9:E9', 'B118:K118', 'C134:E134', 'H142:J142', 'C137:E137', 'M137:O137', 'G26:S26', 'C139:E139', 'C105:E105', 'M139:O139', 'C138:E138', 'I107:K107', 'C132:E132', 'F92:J93', 'C110:E110', 'F73:O73', 'D73:E74', 'B137:B138', 'B16:T16', 'B124:G124', 'N75:O83', 'D64:F64', 'D98:E99', 'M141:O141', 'H120:J120', 'G41:U41', 'C111:E111', 'B18:T18', 'L140:L144', 'B126:G126', 'M143:O143', 'C108:E108', 'B65:C65', 'M114:T115', 'B125:G125', 'H137:J137', 'D82:E82', 'D65:F65', 'B51:F51', 'H121:J121', 'K126:M126', 'N74:O74', 'B41:F41', 'C109:E109', 'K122:M122']
+---

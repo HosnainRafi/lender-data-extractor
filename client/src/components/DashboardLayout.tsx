@@ -21,15 +21,17 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { ClipboardCheck, Database, LayoutDashboard, LogOut, PanelLeft, ScanSearch, Settings2 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Overview", target: "overview" },
+  { icon: Database, label: "Lenders", target: "lenders" },
+  { icon: ClipboardCheck, label: "Review", target: "review" },
+  { icon: Settings2, label: "Refresh", target: "refresh" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -105,12 +107,12 @@ function DashboardLayoutContent({
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const activeMenuItem = menuItems.find(item => location === "/") ?? menuItems[0];
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -168,23 +170,22 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
-                  </span>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm"><ScanSearch className="h-4 w-4" /></div>
+                  <div className="min-w-0"><span className="block truncate text-sm font-semibold tracking-tight">Rate Ledger</span><span className="block truncate text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Mortgage data ops</span></div>
                 </div>
-              ) : null}
+              ) : <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground"><ScanSearch className="h-4 w-4" /></div>}
             </div>
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
-                const isActive = location === item.path;
+              {menuItems.map((item, index) => {
+                const isActive = index === 0;
                 return (
-                  <SidebarMenuItem key={item.path}>
+                  <SidebarMenuItem key={item.target}>
                     <SidebarMenuButton
                       isActive={isActive}
-                      onClick={() => setLocation(item.path)}
+                      onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth", block: "start" })}
                       tooltip={item.label}
                       className={`h-10 transition-all font-normal`}
                     >

@@ -1,0 +1,22 @@
+# Project TODO
+
+- [x] Inspect both supplied Google Sheets and confirm the fixed column G website / column J product-URL mapping.
+- [x] Reverse-engineer the reference workbook sheet names, headers, column order, styles, validations, and formulas for strict export fidelity.
+- [x] Save a concise CSV-header verification artifact confirming column G as the main website and column J as the product URL for both source-sheet imports.
+- [x] Define database models for lenders, scrape jobs, scrape attempts, extracted products, product versions, review edits, and refresh settings.
+- [x] Add an elegant authenticated dashboard with lender status, source URLs, latest-scrape timestamps, and batch controls.
+- [x] Implement one-click synchronization from both supplied Google Sheets with deduplication and source tracking.
+- [x] Implement browser-only page capture for individual and batch lender runs, including JavaScript rendering, timeouts, screenshots, and extraction diagnostics.
+- [x] Implement queue persistence, live progress polling, per-lender runs, batch runs, cancellation-safe status handling, error categorisation, and one-click retry.
+- [x] Implement AI-assisted structured mortgage-product extraction that maps fields to the reference workbook schema and records extraction confidence and source evidence.
+- [x] Implement manual record review, editing, and approval before export.
+- [x] Implement per-lender JSON viewing and download.
+- [x] Implement a multi-sheet Excel export that preserves the reference workbook sheet names, headers, column order, and formatting.
+- [x] Implement product change detection to identify current, new, withdrawn, and additional records between runs.
+- [x] Implement a user-configurable recurring refresh schedule and background job workflow.
+- [x] Implement refreshes as idempotent, request-scoped Autoscale jobs with persisted progress rather than a continuously resident queue worker.
+- [x] Add unit tests for source parsing, schema transformations, change detection, and reference-workbook export behavior.
+- [x] Verify desktop and mobile UI rendering, backend behavior, and workbook output against the supplied reference.
+- [x] Document operating limitations for permission-restricted, CAPTCHA-protected, and authentication-required lender pages.
+- [x] Implement and expose an explicit additional-product lifecycle classification with persistence and export handling.
+- [x] Add lifecycle change-detection tests for repeated, new, withdrawn, and additional product classifications.
