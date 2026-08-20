@@ -37,5 +37,5 @@
 - [x] Prevent OAuth SDK initialization from requiring OAUTH_SERVER_URL when LOCAL_MODE is enabled.
 - [x] Add a regression test for the OAuth-free local startup configuration.
 - [x] Verify and publish the corrected Windows local startup workflow.
-- [ ] Push the OAuth-free local startup fix to the private GitHub repository and confirm the updated branch.
-- [ ] Save a checkpoint containing the verified OAuth-free local startup fix.
+- [x] Push the OAuth-free local startup fix to the private GitHub repository and confirm the updated branch.
+- [x] Save a checkpoint containing the verified OAuth-free local startup fix.
