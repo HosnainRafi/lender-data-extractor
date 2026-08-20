@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { extractMortgageProductsLocally } from "./productExtraction";
+import { describe, expect, it, vi } from "vitest";
+import { extractMortgageProducts, extractMortgageProductsLocally } from "./productExtraction";
+import { invokeLLM } from "./_core/llm";
+
+vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn() }));
 
 describe("extractMortgageProductsLocally", () => {
   it("creates a review-required record from visible rate, LTV, and term evidence", () => {
@@ -123,6 +126,33 @@ describe("extractMortgageProductsLocally", () => {
     expect(fixed).toMatchObject({ product: "5 Year Fixed Rate", aprc: 0.06, maxLtv: 0.8, productFee: 999, term: 5, basis: "Fixed", confidence: 0.82 });
     expect(tracker?.rate).toBeCloseTo(0.0435, 10);
     expect(fixed?.rate).toBeCloseTo(0.0515, 10);
+  });
+
+  it("uses high-confidence Newcastle card records before the optional AI extraction path", async () => {
+    const previousMode = process.env.LOCAL_EXTRACTOR;
+    delete process.env.LOCAL_EXTRACTOR;
+    try {
+      const result = await extractMortgageProducts("Newcastle for Intermediaries", "https://newcastleforintermediaries.co.uk/products/our-product-range", [
+        "EBRT319",
+        "2 Year Base Rate Tracker",
+        "Until 30 November 2028",
+        "Initial rate",
+        "4.35%",
+        "APRC",
+        "6.20%",
+        "LTV",
+        "80%",
+        "Product fee",
+        "£999",
+        "Full product details",
+      ].join("\n"));
+
+      expect(result.products).toEqual([expect.objectContaining({ code: "EBRT319", rate: 0.0435, aprc: 0.062, maxLtv: 0.8, confidence: 0.82 })]);
+      expect(invokeLLM).not.toHaveBeenCalled();
+    } finally {
+      if (previousMode === undefined) delete process.env.LOCAL_EXTRACTOR;
+      else process.env.LOCAL_EXTRACTOR = previousMode;
+    }
   });
 
   it("does not invent product records where the rendered page contains no rate", () => {

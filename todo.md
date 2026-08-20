@@ -71,3 +71,5 @@
 - [x] Save a final checkpoint containing the manual CAPTCHA recovery and flexible spreadsheet-import workflow.
 - [x] Diagnose the failed Newcastle for Intermediaries product-page capture and extraction path.
 - [x] Add and validate the smallest compatible fix or clear user-recovery guidance for the Newcastle product page.
+- [x] Trace why a real Newcastle lender run shows no persisted products despite the successful parser verification.
+- [x] Repair and prove the full capture-to-persistence workflow stores Newcastle product records for the lender dashboard.

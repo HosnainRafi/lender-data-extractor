@@ -249,7 +249,13 @@ export function extractMortgageProductsLocally(sourceUrl: string, renderedText: 
 }
 
 export async function extractMortgageProducts(lenderName: string, sourceUrl: string, renderedText: string): Promise<ExtractedProductsResponse> {
-  if (process.env.LOCAL_EXTRACTOR === "rules") return extractMortgageProductsLocally(sourceUrl, renderedText);
+  const deterministic = extractMortgageProductsLocally(sourceUrl, renderedText);
+  const highConfidenceDeterministicProducts = deterministic.products.filter(product => product.confidence >= 0.75);
+  if (process.env.LOCAL_EXTRACTOR === "rules" || highConfidenceDeterministicProducts.length > 0) {
+    return highConfidenceDeterministicProducts.length > 0
+      ? { ...deterministic, products: highConfidenceDeterministicProducts, pageClassification: "product_page", additionalNotes: deterministic.additionalNotes }
+      : deterministic;
+  }
   const boundedText = renderedText.slice(0, 80_000);
   const response = await invokeLLM({
     model: "gpt-5-mini",
