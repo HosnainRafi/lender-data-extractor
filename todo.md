@@ -43,12 +43,12 @@
 - [x] Add a safe one-command Windows helper to create the template directory and copy the user-supplied workbook.
 - [x] Verify local Excel export after template provisioning and push the correction to GitHub.
 - [x] Run a local Excel export with the supplied workbook at the expected template path and verify the downloaded artifact.
-- [ ] Fetch a generated local workbook through the application artifact route and validate its XLSX response.
+- [x] Fetch a generated local workbook through the application artifact route and validate its XLSX response.
 - [x] Inspect Chorley comparison-page evidence and the supplied JSON for initial-rate, product-code, and null-field extraction failures.
 - [x] Add and test a Chorley-specific browser-text parser for product code, initial rate, and related mortgage fields.
-- [ ] Verify corrected Chorley JSON output and publish the extraction fix to the private repository.
-- [ ] Verify both corrected Chorley JSON and downloadable XLSX workbook output after reviewable fields are populated.
-- [ ] Commit and push the Excel template helper and documentation changes to the private repository.
+- [x] Verify corrected Chorley JSON output and publish the extraction fix to the private repository.
+- [x] Verify both corrected Chorley JSON and downloadable XLSX workbook output after reviewable fields are populated.
+- [x] Commit and push the Excel template helper and documentation changes to the private repository.
 - [x] Verify the manual-lender database export resolves cleanly during local server startup.
 - [x] Replace the line-by-line local percentage scanner with a labeled-field block parser that preserves complete Chorley mortgage records.
 - [x] Add regression coverage for multiple Chorley product blocks, including code, rate, LTV, APRC, type, term, and expected confidence.
@@ -59,3 +59,5 @@
 - [x] Add and run lender-scoped XLSX export coverage proving one lender’s workbook excludes all other lenders’ products.
 - [x] Seed two lenders, render a workbook from the selected lender’s retrieved products, and assert the other lender’s group and rows are absent.
 - [x] Render a reference workbook from the corrected Chorley parser output and assert its code, rate, LTV, and APRC cells are retained.
+- [x] Capture Chorley through the local browser workflow, save its corrected lender JSON artifact, and inspect grouped code, rate, LTV, and APRC values.
+- [x] Generate and fetch a lender-scoped Chorley workbook through the local artifact route, verifying the downloaded row values match the corrected JSON.
