@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: lender-data-extractor-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: lender_data_extractor
+      MYSQL_USER: lender
+      MYSQL_PASSWORD: lender_local_password
+      MYSQL_ROOT_PASSWORD: root_local_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - lender_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_local_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  lender_mysql_data:

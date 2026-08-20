@@ -3,6 +3,15 @@
 // Downloads return /manus-storage/{key} paths served via 307 redirect.
 
 import { ENV } from "./_core/env";
+import crypto from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
+export const localArtifactsDirectory = path.resolve(process.env.LOCAL_ARTIFACTS_DIR ?? "local-artifacts");
+
+function isLocalMode() {
+  return process.env.LOCAL_MODE === "true";
+}
 
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
@@ -33,8 +42,15 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
-  const { forgeUrl, forgeKey } = getForgeConfig();
   const key = appendHashSuffix(normalizeKey(relKey));
+  if (isLocalMode()) {
+    const outputPath = path.resolve(localArtifactsDirectory, key);
+    if (!outputPath.startsWith(`${localArtifactsDirectory}${path.sep}`)) throw new Error("Invalid local artifact path.");
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, data);
+    return { key, url: `/local-artifacts/${key}` };
+  }
+  const { forgeUrl, forgeKey } = getForgeConfig();
 
   // 1. Get presigned PUT URL from Forge
   const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
@@ -73,10 +89,11 @@ export async function storagePut(
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
-  return { key, url: `/manus-storage/${key}` };
+  return { key, url: isLocalMode() ? `/local-artifacts/${key}` : `/manus-storage/${key}` };
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
+  if (isLocalMode()) return `/local-artifacts/${normalizeKey(relKey)}`;
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = normalizeKey(relKey);
 

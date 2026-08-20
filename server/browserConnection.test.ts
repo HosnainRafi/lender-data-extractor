@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 const endpoint = process.env.BROWSER_WS_ENDPOINT;
+const runRemoteBrowserIntegrationTest = process.env.RUN_REMOTE_BROWSER_TESTS === "true";
 
 describe("browser engine connection", () => {
   const sockets: WebSocket[] = [];
@@ -9,7 +10,7 @@ describe("browser engine connection", () => {
     sockets.forEach(socket => socket.close());
   });
 
-  it.skipIf(!endpoint)("opens and closes the configured browser WebSocket endpoint", async () => {
+  it.skipIf(!endpoint || !runRemoteBrowserIntegrationTest)("opens and closes the configured browser WebSocket endpoint", async () => {
     const socket = new WebSocket(endpoint!);
     sockets.push(socket);
 

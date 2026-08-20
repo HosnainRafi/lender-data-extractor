@@ -7,7 +7,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { createReferenceWorkbook } from "./excelExport";
 import { createAndRunJob, runJobSegment } from "./jobRunner";
-import { cancelQueuedJob, getDashboard, getProducts, getRefreshSettings, saveRefreshSettings, syncLenders, updateProduct } from "./lenderDb";
+import { addManualLender, cancelQueuedJob, getDashboard, getProducts, getRefreshSettings, saveRefreshSettings, syncLenders, updateProduct } from "./lenderDb";
 import { extractMortgageProducts } from "./productExtraction";
 import { importConfiguredLenders } from "./sheetImport";
 
@@ -38,6 +38,7 @@ export const appRouter = router({
       const imported = await importConfiguredLenders();
       return syncLenders(ctx.user.id, imported);
     }),
+    addManual: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(160), mainWebsiteUrl: z.string().url().nullable().optional(), productPageUrl: z.string().url().nullable().optional() }).refine(input => Boolean(input.mainWebsiteUrl || input.productPageUrl), { message: "Provide a lender website or product-page URL." })).mutation(({ ctx, input }) => addManualLender(ctx.user.id, input)),
     run: protectedProcedure.input(z.object({ lenderId: z.number().int().positive().nullable(), trigger: z.enum(["manual", "retry"]).default("manual") })).mutation(({ ctx, input }) => createAndRunJob(ctx.user.id, input.lenderId, input.trigger)),
     continueRun: protectedProcedure.input(z.object({ jobId: z.number().int().positive() })).mutation(({ ctx, input }) => runJobSegment(ctx.user.id, input.jobId)),
     cancelRun: protectedProcedure.input(z.object({ jobId: z.number().int().positive() })).mutation(({ ctx, input }) => cancelQueuedJob(ctx.user.id, input.jobId)),

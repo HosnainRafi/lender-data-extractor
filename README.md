@@ -1,0 +1,78 @@
+# Lender Data Extractor
+
+This is a **local-first mortgage-product capture workspace**. It opens public lender pages with Chrome/Chromium, retains the rendered-page evidence, extracts reviewable product records, and exports JSON or a workbook based on the supplied `01-btl-mort_rates.xlsx` template.
+
+> **Local manual mode does not need a hosted browser service, hosted AI extraction, S3 storage, or an XLSX input file for every lender.** It stores data, screenshots, and downloads on your computer.
+
+## What you need
+
+| Requirement | Why it is needed |
+| --- | --- |
+| Node.js 22+ and `pnpm` | Runs the web application. |
+| Docker Desktop | Runs the local MySQL database. |
+| Google Chrome or Chromium | Renders JavaScript lender pages through a real local browser. |
+| `01-btl-mort_rates.xlsx` | Needed **only** for strict-format Excel export. |
+
+## Run locally
+
+```bash
+git clone <YOUR_GITHUB_REPOSITORY_URL>
+cd lender-data-extractor
+pnpm install
+
+# Start the local database and wait until it is healthy.
+docker compose -f docker-compose.local.yml up -d
+
+# Optional but required for strict reference-format XLSX exports.
+mkdir -p templates
+cp /path/to/01-btl-mort_rates.xlsx templates/01-btl-mort_rates.xlsx
+
+# Create the local-only configuration.
+cat > .env <<'EOF'
+LOCAL_MODE=true
+LOCAL_EXTRACTOR=rules
+DATABASE_URL=mysql://lender:lender_local_password@127.0.0.1:3306/lender_data_extractor
+# Set this only when Chrome/Chromium is not in a normal system location.
+BROWSER_EXECUTABLE_PATH=/usr/bin/google-chrome
+REFERENCE_WORKBOOK_PATH=templates/01-btl-mort_rates.xlsx
+LOCAL_ARTIFACTS_DIR=local-artifacts
+EOF
+
+# Create the database tables, then start the app.
+pnpm drizzle-kit migrate
+pnpm dev
+```
+
+Open the URL printed in the terminal, usually `http://localhost:3000`. On macOS, set `BROWSER_EXECUTABLE_PATH` to `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`; on Windows, use the full `chrome.exe` path. On Linux, use `/usr/bin/google-chrome` or `/usr/bin/chromium`.
+
+## Use one lender link manually
+
+1. Open the dashboard and select **Add lender link**.
+2. Enter the lender name and paste either its **direct product page URL** (best) or its main website URL.
+3. Select **Add and run**. Chrome/Chromium renders the page locally; the app saves the visible text and screenshot in `local-artifacts/`.
+4. Review the records in **Product review queue**, correct incomplete fields, and mark them approved or edited.
+5. Use the lender-row download button for JSON, or use **Export workbook** for the reference-format XLSX file.
+
+You **do not need to give the full XLSX file** to scrape one lender or download JSON. The reference workbook is required only when you want an output file that matches its prescribed sheet names, headers, and formatting. You also do **not** need either Google Sheet for manual use.
+
+## Optional Google Sheet import
+
+The **Sync sheets** control imports the two configured public Google Sheets and uses **column G** as the main website URL and **column J** as the product-page URL. This is optional; direct manual entry is preferable when you want to work one lender at a time.
+
+## Accuracy and website access
+
+The local no-API extractor is deterministic: it looks for visible rate, LTV, term, and product hints in the browser-rendered page. It intentionally assigns **40% confidence** and requires review. It is helpful for structured public product tables, but it cannot honestly be guaranteed to be **90% or 100% correct** across every lender site.
+
+> No tool can reliably collect every website. Login-only portals, CAPTCHAs, WAF/anti-bot challenges, robots restrictions, personalized pricing, PDFs/images, and ambiguous product wording may produce no usable record or require direct manual entry. Do not bypass access controls. Treat the original lender page and your review as the source of truth before publishing or relying on data.
+
+For better consistency without a hosted AI service, use direct product/rate pages instead of homepages, run one lender at a time, preserve the screenshot evidence, and review all records before Excel export.
+
+## Local data and cleanup
+
+| Location | Contents |
+| --- | --- |
+| Local MySQL Docker volume | Lenders, jobs, products, review decisions, and history. |
+| `local-artifacts/` | Captured text, screenshots, and exported workbook files. |
+| `templates/01-btl-mort_rates.xlsx` | Your local Excel reference template; do not commit it if it is confidential. |
+
+Stop the application with `Ctrl+C`. Stop the database with `docker compose -f docker-compose.local.yml down`. Add `-v` only if you intentionally want to delete all locally stored lender data.

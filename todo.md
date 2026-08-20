@@ -20,3 +20,9 @@
 - [x] Document operating limitations for permission-restricted, CAPTCHA-protected, and authentication-required lender pages.
 - [x] Implement and expose an explicit additional-product lifecycle classification with persistence and export handling.
 - [x] Add lifecycle change-detection tests for repeated, new, withdrawn, and additional product classifications.
+- [ ] Replace the hosted-browser dependency with a local Chromium capture path for local development and manual operation.
+- [ ] Add manual entry of a single lender name, website URL, and product-page URL without requiring either source spreadsheet.
+- [ ] Document local installation, browser configuration, manual single-link use, optional spreadsheet import, and data-quality limitations.
+- [ ] Create and push the completed project to a private GitHub repository.
+- [ ] Verify the local-only setup path and provide concise run instructions.
+- [ ] Add automated coverage for the local rule-based extraction mode and its review-required confidence behavior.

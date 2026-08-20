@@ -42,6 +42,10 @@ export default function Home() {
   const utils = trpc.useUtils();
   const [reviewId, setReviewId] = useState<number | null>(null);
   const [reviewJson, setReviewJson] = useState("");
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualName, setManualName] = useState("");
+  const [manualWebsite, setManualWebsite] = useState("");
+  const [manualProductPage, setManualProductPage] = useState("");
   const [cronExpression, setCronExpression] = useState("0 0 3 * * *");
   const dashboard = trpc.lenders.dashboard.useQuery(undefined, { refetchInterval: 15_000 });
   const products = trpc.lenders.products.useQuery(undefined, { refetchInterval: 15_000 });
@@ -52,6 +56,7 @@ export default function Home() {
     await Promise.all([utils.lenders.dashboard.invalidate(), utils.lenders.products.invalidate(), utils.refresh.get.invalidate()]);
   };
   const syncSources = trpc.lenders.syncSources.useMutation({ onSuccess: async result => { toast.success(`${result.imported} lender records synchronized.`); await invalidate(); }, onError: error => toast.error(error.message) });
+  const addManual = trpc.lenders.addManual.useMutation({ onSuccess: async lender => { setManualOpen(false); setManualName(""); setManualWebsite(""); setManualProductPage(""); toast.success(`${lender.name} added. Running its local browser capture now.`); await invalidate(); run.mutate({ lenderId: lender.id, trigger: "manual" }); }, onError: error => toast.error(error.message) });
   const run = trpc.lenders.run.useMutation({ onSuccess: async job => { toast.success(`Scrape segment processed: ${job?.processedLenders ?? 0} of ${job?.totalLenders ?? 0}.`); await invalidate(); }, onError: error => toast.error(error.message) });
   const continueRun = trpc.lenders.continueRun.useMutation({ onSuccess: async () => { toast.success("Next persisted scrape segment completed."); await invalidate(); }, onError: error => toast.error(error.message) });
   const cancelRun = trpc.lenders.cancelRun.useMutation({ onSuccess: async () => { toast.success("Queued browser batch cancelled."); await invalidate(); }, onError: error => toast.error(error.message) });
@@ -60,7 +65,7 @@ export default function Home() {
   const saveRefresh = trpc.refresh.save.useMutation({ onSuccess: async () => { toast.success("Refresh settings saved."); await invalidate(); }, onError: error => toast.error(error.message) });
 
   const reviewProduct = useMemo(() => products.data?.find(product => product.id === reviewId), [products.data, reviewId]);
-  const busy = syncSources.isPending || run.isPending || continueRun.isPending || cancelRun.isPending;
+  const busy = syncSources.isPending || addManual.isPending || run.isPending || continueRun.isPending || cancelRun.isPending;
   const hasQueued = dashboard.data?.jobs.find(job => job.status === "queued");
   const currentCron = refresh.data?.cronExpression ?? cronExpression;
 
@@ -76,11 +81,14 @@ export default function Home() {
             <p className="mt-4 max-w-xl text-sm leading-6 text-teal-50/80 sm:text-base">Synchronize your source list, render every lender page through a secure browser session, then review and export product records in the supplied workbook format.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => syncSources.mutate()} disabled={busy} className="bg-white text-slate-900 hover:bg-teal-50"><UploadCloud className="mr-2 h-4 w-4" /> Sync sources</Button>
+            <Button onClick={() => setManualOpen(true)} disabled={busy} className="bg-white text-slate-900 hover:bg-teal-50"><UploadCloud className="mr-2 h-4 w-4" /> Add lender link</Button>
+            <Button onClick={() => syncSources.mutate()} disabled={busy} variant="outline" className="border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white"><RefreshCw className="mr-2 h-4 w-4" /> Sync sheets</Button>
             <Button onClick={() => run.mutate({ lenderId: null, trigger: "manual" })} disabled={busy || !dashboard.data?.summary.lenders} variant="outline" className="border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white"><Play className="mr-2 h-4 w-4" /> Run browser batch</Button>
           </div>
         </div>
       </section>
+
+      <Dialog open={manualOpen} onOpenChange={setManualOpen}><DialogContent><DialogHeader><DialogTitle>Add one lender for local capture</DialogTitle><DialogDescription>Paste a public lender website or direct product page. A spreadsheet is optional.</DialogDescription></DialogHeader><div className="space-y-4"><Input value={manualName} onChange={event => setManualName(event.target.value)} placeholder="Lender name, e.g. Example Bank" /><Input value={manualWebsite} onChange={event => setManualWebsite(event.target.value)} placeholder="Main website URL (optional if product page is supplied)" type="url" /><Input value={manualProductPage} onChange={event => setManualProductPage(event.target.value)} placeholder="Product page URL (recommended)" type="url" /><p className="text-xs leading-5 text-muted-foreground">The local browser will render this page; review the extracted data and evidence before exporting.</p></div><DialogFooter><Button variant="outline" onClick={() => setManualOpen(false)}>Cancel</Button><Button onClick={() => addManual.mutate({ name: manualName, mainWebsiteUrl: manualWebsite || null, productPageUrl: manualProductPage || null })} disabled={addManual.isPending || !manualName.trim() || !(manualWebsite || manualProductPage)}>{addManual.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />} Add and run</Button></DialogFooter></DialogContent></Dialog>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[

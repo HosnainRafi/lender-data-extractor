@@ -2,7 +2,7 @@ import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { getDb } from "./db";
 import { lenders, productEdits, products, productVersions, refreshSettings, scrapeAttempts, scrapeJobs } from "../drizzle/schema";
 import type { MortgageProductData, ProductLifecycle, ReviewStatus } from "../shared/lenderTypes";
-import type { ImportedLender } from "./sheetImport";
+import { normalizeLenderName, type ImportedLender } from "./sheetImport";
 import { productFingerprint } from "./productExtraction";
 import { lifecycleForObservedRecord, withdrawnFingerprints } from "../shared/lifecycle";
 
@@ -34,6 +34,21 @@ export async function syncLenders(userId: number, sourceLenders: ImportedLender[
     });
   }
   return { imported: sourceLenders.length };
+}
+
+export async function addManualLender(userId: number, input: { name: string; mainWebsiteUrl?: string | null; productPageUrl?: string | null }) {
+  const name = input.name.trim();
+  const normalizedName = normalizeLenderName(name);
+  if (!normalizedName) throw new Error("A lender name is required.");
+  if (!input.mainWebsiteUrl && !input.productPageUrl) throw new Error("Provide a lender website or product-page URL.");
+  const database = await requireDb();
+  await database.insert(lenders).values({
+    userId, name, normalizedName, mainWebsiteUrl: input.mainWebsiteUrl ?? null, productPageUrl: input.productPageUrl ?? null,
+    sourceWorkbook: "Manual local entry", sourceRow: 0,
+  }).onDuplicateKeyUpdate({
+    set: { name, mainWebsiteUrl: input.mainWebsiteUrl ?? null, productPageUrl: input.productPageUrl ?? null, sourceWorkbook: "Manual local entry", sourceRow: 0 },
+  });
+  return (await database.select().from(lenders).where(and(eq(lenders.userId, userId), eq(lenders.normalizedName, normalizedName))).limit(1))[0];
 }
 
 export async function getDashboard(userId: number) {

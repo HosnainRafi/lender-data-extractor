@@ -1,8 +1,12 @@
 import ExcelJS from "exceljs";
+import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { storagePut } from "./storage";
 import { productToReferenceRow, type MortgageProductData } from "../shared/lenderTypes";
 
 const REFERENCE_TEMPLATE_PATH = "/manus-storage/01-btl-mort_rates_fbd27c56.xlsx";
+const DEFAULT_LOCAL_TEMPLATE_PATH = path.resolve(process.cwd(), "templates", "01-btl-mort_rates.xlsx");
 
 export type ExportProduct = {
   lenderName: string;
@@ -86,8 +90,16 @@ export async function renderReferenceWorkbook(template: Buffer, products: Export
 }
 
 export async function createReferenceWorkbook(origin: string, products: ExportProduct[]) {
-  const templateResponse = await fetch(new URL(REFERENCE_TEMPLATE_PATH, origin));
-  if (!templateResponse.ok) throw new Error(`Reference workbook template could not be loaded (${templateResponse.status}).`);
-  const output = await renderReferenceWorkbook(Buffer.from(await templateResponse.arrayBuffer()) as unknown as Buffer, products);
+  let template: Buffer;
+  if (process.env.LOCAL_MODE === "true") {
+    const templatePath = process.env.REFERENCE_WORKBOOK_PATH ?? DEFAULT_LOCAL_TEMPLATE_PATH;
+    if (!existsSync(templatePath)) throw new Error(`Reference workbook not found at ${templatePath}. Copy 01-btl-mort_rates.xlsx into templates/ or set REFERENCE_WORKBOOK_PATH.`);
+    template = await readFile(templatePath);
+  } else {
+    const templateResponse = await fetch(new URL(REFERENCE_TEMPLATE_PATH, origin));
+    if (!templateResponse.ok) throw new Error(`Reference workbook template could not be loaded (${templateResponse.status}).`);
+    template = Buffer.from(await templateResponse.arrayBuffer()) as unknown as Buffer;
+  }
+  const output = await renderReferenceWorkbook(template, products);
   return storagePut(`exports/lender-data-${new Date().toISOString().slice(0, 10)}.xlsx`, output, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 }

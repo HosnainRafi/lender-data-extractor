@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import { localArtifactsDirectory } from "../storage";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -35,6 +36,7 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  if (process.env.LOCAL_MODE === "true") app.use("/local-artifacts", express.static(localArtifactsDirectory));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   app.post("/api/scheduled/lender-refresh", handleScheduledLenderRefresh);

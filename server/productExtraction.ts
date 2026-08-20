@@ -28,7 +28,45 @@ const productSchema = {
   required: ["products", "additionalNotes", "pageClassification"],
 } as const;
 
+function asFraction(value: string | undefined): number | null {
+  if (!value) return null;
+  const numeric = Number(value.replace(",", ""));
+  return Number.isFinite(numeric) ? numeric / 100 : null;
+}
+
+function nearbyProductName(lines: string[], index: number): string {
+  const line = lines[index] ?? "";
+  const withoutRate = line.replace(/\b\d{1,2}(?:\.\d{1,3})?\s*%/g, "").replace(/\b\d{1,3}(?:\.\d+)?\s*%?\s*ltv\b/gi, "").replace(/\s{2,}/g, " ").trim();
+  if (withoutRate.length >= 5 && withoutRate.length <= 120) return withoutRate;
+  return lines.slice(Math.max(0, index - 2), index).reverse().find(candidate => candidate.length >= 5 && candidate.length <= 120) ?? "Mortgage product";
+}
+
+/** Local deterministic parser for users who do not want a hosted AI service. */
+export function extractMortgageProductsLocally(sourceUrl: string, renderedText: string): ExtractedProductsResponse {
+  const lines = renderedText.split(/\n+/).map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const unique = new Set<string>();
+  const products = lines.flatMap((line, index) => {
+    const rate = line.match(/\b(\d{1,2}(?:\.\d{1,3})?)\s*%/);
+    if (!rate) return [];
+    const surrounding = lines.slice(Math.max(0, index - 2), Math.min(lines.length, index + 3)).join(" ");
+    const ltv = surrounding.match(/\b(\d{1,3}(?:\.\d+)?)\s*%?\s*ltv\b/i);
+    const term = surrounding.match(/\b([235])\s*(?:year|yr)\b/i);
+    const product = nearbyProductName(lines, index);
+    const key = `${product}|${rate[1]}|${ltv?.[1] ?? ""}`.toLowerCase();
+    if (unique.has(key)) return [];
+    unique.add(key);
+    return [{
+      code: null, product, purpose: /buy.?to.?let|btl/i.test(surrounding) ? "Buy to Let" : null,
+      maxLtv: asFraction(ltv?.[1]), rate: asFraction(rate[1]), aprc: null, productFee: null, incentives: null, cashback: null, ercs: null,
+      endDate: null, segment: null, term: term ? Number(term[1]) : null, basis: /tracker/i.test(surrounding) ? "Tracker" : /fixed/i.test(surrounding) ? "Fixed" : null,
+      blank: null, sourceEvidence: [line], extractionNotes: "Local rule-based extraction; verify against the captured lender page before export.", confidence: 0.4,
+    }];
+  });
+  return { products, additionalNotes: products.length ? [] : ["No rate-bearing rows were recognized by the local rule parser."], pageClassification: products.length ? "product_page" : "no_product_data" };
+}
+
 export async function extractMortgageProducts(lenderName: string, sourceUrl: string, renderedText: string): Promise<ExtractedProductsResponse> {
+  if (process.env.LOCAL_EXTRACTOR === "rules") return extractMortgageProductsLocally(sourceUrl, renderedText);
   const boundedText = renderedText.slice(0, 80_000);
   const response = await invokeLLM({
     model: "gpt-5-mini",
