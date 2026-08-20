@@ -28,6 +28,8 @@ const productSchema = {
   required: ["products", "additionalNotes", "pageClassification"],
 } as const;
 
+const LOCAL_EXTRACTION_NOTE = "Local rule-based extraction; verify against the captured lender page before export.";
+
 function asFraction(value: string | undefined): number | null {
   if (!value) return null;
   const numeric = Number(value.replace(",", ""));
@@ -41,11 +43,96 @@ function nearbyProductName(lines: string[], index: number): string {
   return lines.slice(Math.max(0, index - 2), index).reverse().find(candidate => candidate.length >= 5 && candidate.length <= 120) ?? "Mortgage product";
 }
 
-/** Local deterministic parser for users who do not want a hosted AI service. */
-export function extractMortgageProductsLocally(sourceUrl: string, renderedText: string): ExtractedProductsResponse {
-  const lines = renderedText.split(/\n+/).map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+type LabeledField = "rate" | "maxLtv" | "aprc" | "code" | "details";
+
+function labeledFieldFor(line: string): LabeledField | null {
+  const normalized = line.replace(/[:\s]+$/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+  if (/^(?:initial )?(?:interest )?rate$/.test(normalized) || /^(?:initial|introductory) rate$/.test(normalized)) return "rate";
+  if (/^(?:maximum )?loan to value(?: \(ltv\))?$/.test(normalized) || /^max(?:imum)? ltv$/.test(normalized)) return "maxLtv";
+  if (/^(?:overall cost for comparison|aprc)$/.test(normalized)) return "aprc";
+  if (/^(?:product )?(?:code|reference|id)$/.test(normalized)) return "code";
+  if (/^(?:view|see) details$/.test(normalized)) return "details";
+  return null;
+}
+
+function percentageFromValue(value: string | undefined): number | null {
+  return asFraction(value?.match(/\b(\d{1,3}(?:\.\d{1,3})?)\s*%/)?.[1]);
+}
+
+function titleBeforeLabel(lines: string[], labelIndex: number): string | null {
+  const title = lines[labelIndex - 1]?.trim();
+  if (!title || labeledFieldFor(title) || /^\d{1,3}(?:\.\d{1,3})?\s*%$/.test(title)) return null;
+  return title.length >= 3 && title.length <= 220 ? title : null;
+}
+
+function labeledBlockProducts(lines: string[]): Array<MortgageProductData & { confidence: number }> {
+  const products: Array<MortgageProductData & { confidence: number }> = [];
+
+  for (let rateLabelIndex = 0; rateLabelIndex < lines.length; rateLabelIndex += 1) {
+    if (labeledFieldFor(lines[rateLabelIndex]) !== "rate") continue;
+
+    const product = titleBeforeLabel(lines, rateLabelIndex);
+    if (!product) continue;
+
+    let endIndex = lines.length;
+    let endField: LabeledField | null = null;
+    for (let cursor = rateLabelIndex + 1; cursor < lines.length; cursor += 1) {
+      const field = labeledFieldFor(lines[cursor]);
+      if (field === "details" || field === "rate") {
+        endIndex = cursor;
+        endField = field;
+        break;
+      }
+    }
+
+    const values: Partial<Record<Exclude<LabeledField, "details">, string>> = {};
+    for (let cursor = rateLabelIndex; cursor < endIndex; cursor += 1) {
+      const field = labeledFieldFor(lines[cursor]);
+      if (!field || field === "details") continue;
+      const value = lines[cursor + 1];
+      if (!value || labeledFieldFor(value)) continue;
+      values[field] = value;
+    }
+
+    const rate = percentageFromValue(values.rate);
+    if (rate === null) continue;
+
+    const term = product.match(/\b(\d{1,2})\s*(?:year|yr)\b/i);
+    const evidence: string[] = [product, `Initial Interest Rate: ${values.rate}`];
+    if (values.maxLtv) evidence.push(`Maximum Loan To Value (LTV): ${values.maxLtv}`);
+    if (values.aprc) evidence.push(`Overall Cost for Comparison: ${values.aprc}`);
+    if (values.code) evidence.push(`Product Code: ${values.code}`);
+
+    products.push({
+      code: values.code?.trim() || null,
+      product,
+      purpose: /\b(?:buy\s*to\s*let|btl)\b/i.test(product) ? "Buy to Let" : null,
+      maxLtv: percentageFromValue(values.maxLtv),
+      rate,
+      aprc: percentageFromValue(values.aprc),
+      productFee: null,
+      incentives: null,
+      cashback: null,
+      ercs: null,
+      endDate: null,
+      segment: null,
+      term: term ? Number(term[1]) : null,
+      basis: /\btracker\b/i.test(product) ? "Tracker" : /\bdiscount\b/i.test(product) ? "Discount" : /\bfixed\b/i.test(product) ? "Fixed" : null,
+      blank: null,
+      sourceEvidence: evidence,
+      extractionNotes: LOCAL_EXTRACTION_NOTE,
+      confidence: 0.75,
+    });
+
+    if (endField === "details") rateLabelIndex = Math.max(rateLabelIndex, endIndex - 1);
+  }
+
+  return products;
+}
+
+function lineByLineRateProducts(lines: string[]): Array<MortgageProductData & { confidence: number }> {
   const unique = new Set<string>();
-  const products = lines.flatMap((line, index) => {
+  return lines.flatMap((line, index) => {
     const rate = line.match(/\b(\d{1,2}(?:\.\d{1,3})?)\s*%/);
     if (!rate) return [];
     const surrounding = lines.slice(Math.max(0, index - 2), Math.min(lines.length, index + 3)).join(" ");
@@ -56,12 +143,33 @@ export function extractMortgageProductsLocally(sourceUrl: string, renderedText: 
     if (unique.has(key)) return [];
     unique.add(key);
     return [{
-      code: null, product, purpose: /buy.?to.?let|btl/i.test(surrounding) ? "Buy to Let" : null,
-      maxLtv: asFraction(ltv?.[1]), rate: asFraction(rate[1]), aprc: null, productFee: null, incentives: null, cashback: null, ercs: null,
-      endDate: null, segment: null, term: term ? Number(term[1]) : null, basis: /tracker/i.test(surrounding) ? "Tracker" : /fixed/i.test(surrounding) ? "Fixed" : null,
-      blank: null, sourceEvidence: [line], extractionNotes: "Local rule-based extraction; verify against the captured lender page before export.", confidence: 0.4,
+      code: null,
+      product,
+      purpose: /buy.?to.?let|btl/i.test(surrounding) ? "Buy to Let" : null,
+      maxLtv: asFraction(ltv?.[1]),
+      rate: asFraction(rate[1]),
+      aprc: null,
+      productFee: null,
+      incentives: null,
+      cashback: null,
+      ercs: null,
+      endDate: null,
+      segment: null,
+      term: term ? Number(term[1]) : null,
+      basis: /tracker/i.test(surrounding) ? "Tracker" : /fixed/i.test(surrounding) ? "Fixed" : null,
+      blank: null,
+      sourceEvidence: [line],
+      extractionNotes: LOCAL_EXTRACTION_NOTE,
+      confidence: 0.4,
     }];
   });
+}
+
+/** Local deterministic parser for users who do not want a hosted AI service. */
+export function extractMortgageProductsLocally(sourceUrl: string, renderedText: string): ExtractedProductsResponse {
+  const lines = renderedText.split(/\n+/).map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const labeledProducts = labeledBlockProducts(lines);
+  const products = labeledProducts.length > 0 ? labeledProducts : lineByLineRateProducts(lines);
   return { products, additionalNotes: products.length ? [] : ["No rate-bearing rows were recognized by the local rule parser."], pageClassification: products.length ? "product_page" : "no_product_data" };
 }
 

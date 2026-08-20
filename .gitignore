@@ -46,7 +46,9 @@ pids
 *.pid.lock
 *.bak
 local-artifacts/
-templates/
+templates/*
+!templates/.gitkeep
+!templates/README.md
 
 # Coverage directory used by tools like istanbul
 coverage/

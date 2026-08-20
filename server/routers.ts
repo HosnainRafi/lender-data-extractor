@@ -45,12 +45,12 @@ export const appRouter = router({
     products: protectedProcedure.input(z.object({ lenderId: z.number().int().positive().optional() }).optional()).query(({ ctx, input }) => getProducts(ctx.user.id, input?.lenderId)),
     updateProduct: protectedProcedure.input(z.object({ productId: z.number().int().positive(), reviewStatus: z.enum(["needs_review", "approved", "edited"]), data: productInput })).mutation(({ ctx, input }) => updateProduct(ctx.user.id, input.productId, input.data, input.reviewStatus)),
     exportJson: protectedProcedure.input(z.object({ lenderId: z.number().int().positive().optional() }).optional()).query(({ ctx, input }) => getProducts(ctx.user.id, input?.lenderId)),
-    exportWorkbook: protectedProcedure.mutation(async ({ ctx }) => {
+    exportWorkbook: protectedProcedure.input(z.object({ lenderId: z.number().int().positive().optional() }).optional()).mutation(async ({ ctx, input }) => {
       const host = ctx.req.get("host");
       if (!host) throw new Error("Unable to determine the application origin for the reference template.");
       const forwardedProtocol = ctx.req.headers["x-forwarded-proto"];
       const protocol = typeof forwardedProtocol === "string" ? forwardedProtocol : ctx.req.protocol;
-      const products = await getProducts(ctx.user.id);
+      const products = await getProducts(ctx.user.id, input?.lenderId);
       return createReferenceWorkbook(`${protocol}://${host}`, products);
     }),
   }),

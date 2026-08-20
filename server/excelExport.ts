@@ -8,6 +8,10 @@ import { productToReferenceRow, type MortgageProductData } from "../shared/lende
 const REFERENCE_TEMPLATE_PATH = "/manus-storage/01-btl-mort_rates_fbd27c56.xlsx";
 const DEFAULT_LOCAL_TEMPLATE_PATH = path.resolve(process.cwd(), "templates", "01-btl-mort_rates.xlsx");
 
+export function getLocalTemplateSetupInstructions(templatePath = DEFAULT_LOCAL_TEMPLATE_PATH) {
+  return `Reference workbook not found at ${templatePath}. In PowerShell, run: powershell -ExecutionPolicy Bypass -File .\\scripts\\setup-reference-workbook.ps1 -SourcePath "C:\\path\\to\\01-btl-mort_rates.xlsx". Or set REFERENCE_WORKBOOK_PATH to the workbook's full path.`;
+}
+
 export type ExportProduct = {
   lenderName: string;
   lifecycle: "current" | "new" | "withdrawn" | "additional";
@@ -93,7 +97,7 @@ export async function createReferenceWorkbook(origin: string, products: ExportPr
   let template: Buffer;
   if (process.env.LOCAL_MODE === "true") {
     const templatePath = process.env.REFERENCE_WORKBOOK_PATH ?? DEFAULT_LOCAL_TEMPLATE_PATH;
-    if (!existsSync(templatePath)) throw new Error(`Reference workbook not found at ${templatePath}. Copy 01-btl-mort_rates.xlsx into templates/ or set REFERENCE_WORKBOOK_PATH.`);
+    if (!existsSync(templatePath)) throw new Error(getLocalTemplateSetupInstructions(templatePath));
     template = await readFile(templatePath);
   } else {
     const templateResponse = await fetch(new URL(REFERENCE_TEMPLATE_PATH, origin));

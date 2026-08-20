@@ -1,7 +1,8 @@
-import { readFile } from "node:fs/promises";
+import { copyFile, readFile, rm } from "node:fs/promises";
+import path from "node:path";
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
-import { renderReferenceWorkbook } from "./excelExport";
+import { createReferenceWorkbook, getLocalTemplateSetupInstructions, renderReferenceWorkbook } from "./excelExport";
 import { EXPORT_SHEET_NAMES, type MortgageProductData } from "../shared/lenderTypes";
 
 const TEMPLATE_PATH = "/home/ubuntu/webdev-static-assets/01-btl-mort_rates.xlsx";
@@ -17,6 +18,14 @@ function headerRow(sheet: ExcelJS.Worksheet) {
 }
 
 describe("reference workbook export", () => {
+  it("provides a copy-and-paste Windows setup command when the local reference workbook is missing", () => {
+    const guidance = getLocalTemplateSetupInstructions("C:\\Projects\\lender-data-extractor\\templates\\01-btl-mort_rates.xlsx");
+
+    expect(guidance).toContain("setup-reference-workbook.ps1");
+    expect(guidance).toContain("REFERENCE_WORKBOOK_PATH");
+    expect(guidance).toContain("C:\\Projects\\lender-data-extractor\\templates\\01-btl-mort_rates.xlsx");
+  });
+
   it("preserves the supplied worksheet structure, support-sheet values, headers, and product-row formatting", async () => {
     const template = await readFile(TEMPLATE_PATH);
     const source = new ExcelJS.Workbook();
@@ -36,5 +45,42 @@ describe("reference workbook export", () => {
     expect(current.getCell(header + 2, 2).style.font).toEqual(sourceCurrent.getCell(sourceHeader + 2, 2).style.font);
     expect(workbook.getWorksheet("Introduction")!.getCell("A1").value).toEqual(source.getWorksheet("Introduction")!.getCell("A1").value);
     expect(workbook.getWorksheet("Additional")!.getCell("B5").value).toEqual(source.getWorksheet("Additional")!.getCell("B5").value);
+  });
+
+  it("writes only the supplied lender’s product rows into a lender-scoped workbook", async () => {
+    const template = await readFile(TEMPLATE_PATH);
+    const excludedProduct = { ...product, code: "SECOND-EXCLUDED", product: "Other lender product" };
+    const output = await renderReferenceWorkbook(template, [{ lenderName: "Selected Lender", lifecycle: "current", data: product }]);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(output as any);
+    const current = workbook.getWorksheet("Current Products")!;
+    const values = current.getColumn(1).values.map(value => String(value ?? ""));
+
+    expect(values).toContain("TEST-42");
+    expect(values).not.toContain(excludedProduct.code!);
+    expect(current.getCell(headerRow(current) + 1, 1).value).toBe("Selected Lender");
+  });
+
+  it("exports a downloadable local workbook after the reference template is installed at the documented path", async () => {
+    const localTemplate = path.resolve(process.cwd(), "templates", "01-btl-mort_rates.xlsx");
+    const originalLocalMode = process.env.LOCAL_MODE;
+    const originalTemplatePath = process.env.REFERENCE_WORKBOOK_PATH;
+    process.env.LOCAL_MODE = "true";
+    delete process.env.REFERENCE_WORKBOOK_PATH;
+    await copyFile(TEMPLATE_PATH, localTemplate);
+
+    try {
+      const exported = await createReferenceWorkbook("http://localhost:3000", [{ lenderName: "Test Lender", lifecycle: "current", data: product }]);
+      const artifactPath = path.resolve(process.cwd(), "local-artifacts", exported.key);
+      const artifact = await readFile(artifactPath);
+      expect(exported.url).toMatch(/^\/local-artifacts\/exports\/lender-data-/);
+      expect(artifact.subarray(0, 2).toString()).toBe("PK");
+    } finally {
+      await rm(localTemplate, { force: true });
+      if (originalLocalMode === undefined) delete process.env.LOCAL_MODE;
+      else process.env.LOCAL_MODE = originalLocalMode;
+      if (originalTemplatePath === undefined) delete process.env.REFERENCE_WORKBOOK_PATH;
+      else process.env.REFERENCE_WORKBOOK_PATH = originalTemplatePath;
+    }
   });
 });

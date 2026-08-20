@@ -39,3 +39,22 @@
 - [x] Verify and publish the corrected Windows local startup workflow.
 - [x] Push the OAuth-free local startup fix to the private GitHub repository and confirm the updated branch.
 - [x] Save a checkpoint containing the verified OAuth-free local startup fix.
+- [x] Improve local reference-workbook discovery and missing-template guidance for Excel export.
+- [x] Add a safe one-command Windows helper to create the template directory and copy the user-supplied workbook.
+- [x] Verify local Excel export after template provisioning and push the correction to GitHub.
+- [x] Run a local Excel export with the supplied workbook at the expected template path and verify the downloaded artifact.
+- [ ] Fetch a generated local workbook through the application artifact route and validate its XLSX response.
+- [x] Inspect Chorley comparison-page evidence and the supplied JSON for initial-rate, product-code, and null-field extraction failures.
+- [x] Add and test a Chorley-specific browser-text parser for product code, initial rate, and related mortgage fields.
+- [ ] Verify corrected Chorley JSON output and publish the extraction fix to the private repository.
+- [ ] Verify both corrected Chorley JSON and downloadable XLSX workbook output after reviewable fields are populated.
+- [ ] Commit and push the Excel template helper and documentation changes to the private repository.
+- [x] Verify the manual-lender database export resolves cleanly during local server startup.
+- [x] Replace the line-by-line local percentage scanner with a labeled-field block parser that preserves complete Chorley mortgage records.
+- [x] Add regression coverage for multiple Chorley product blocks, including code, rate, LTV, APRC, type, term, and expected confidence.
+- [x] Keep every lender’s scrape result, including blocked status and error detail, separate in the dashboard rather than merging or repeating it in a shared result list.
+- [x] Add lender-specific JSON and XLSX download actions so each lender can be reviewed and downloaded independently.
+- [x] Prevent duplicate blocked-result rows when the same lender is processed more than once in a run or has repeated scrape attempts.
+- [x] Run the documented `npm run dev:local` command after the manual-lender repair and verify an OAuth-free, missing-export-free startup.
+- [x] Add and run lender-scoped XLSX export coverage proving one lender’s workbook excludes all other lenders’ products.
+- [x] Seed two lenders, render a workbook from the selected lender’s retrieved products, and assert the other lender’s group and rows are absent.

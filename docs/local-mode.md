@@ -4,4 +4,10 @@ Run `pnpm dev:local` to use the application without Docker, MySQL, hosted browse
 
 The local deterministic parser is deliberately review-first. It scans browser-rendered text for percentage rates, nearby LTV, term, and fixed/tracker terminology. It produces 40% confidence records and must not be interpreted as an automated verification of lender pricing or eligibility.
 
-The supplied workbook is not a scraping input. Copy it to `templates/01-btl-mort_rates.xlsx` only when an exact-format Excel export is needed. JSON and dashboard review work with a manually entered lender URL alone.
+The supplied workbook is not a scraping input. It is needed only when an exact-format Excel export is required. In Windows PowerShell, from the project folder, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-reference-workbook.ps1 -SourcePath "C:\path\to\01-btl-mort_rates.xlsx"
+```
+
+This safely copies the workbook to `templates\01-btl-mort_rates.xlsx` without committing it to Git. JSON and dashboard review work with a manually entered lender URL alone.

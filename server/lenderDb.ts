@@ -66,8 +66,12 @@ export async function getDashboard(userId: number) {
       .from(scrapeAttempts)
       .innerJoin(lenders, eq(scrapeAttempts.lenderId, lenders.id))
       .where(and(eq(lenders.userId, userId), eq(scrapeAttempts.status, "failed")))
-      .orderBy(desc(scrapeAttempts.createdAt)).limit(8),
+      .orderBy(desc(scrapeAttempts.createdAt)),
   ]);
+  const latestFailureByLender = new Map<number, (typeof errorRows)[number]>();
+  errorRows.forEach(row => {
+    if (!latestFailureByLender.has(row.attempt.lenderId)) latestFailureByLender.set(row.attempt.lenderId, row);
+  });
   const productCountByLender = new Map<number, number>();
   productRows.filter(product => product.lifecycle !== "withdrawn").forEach(product => {
     productCountByLender.set(product.lenderId, (productCountByLender.get(product.lenderId) ?? 0) + 1);
@@ -81,7 +85,7 @@ export async function getDashboard(userId: number) {
     },
     lenders: lenderRows.map(lender => ({ ...lender, productCount: productCountByLender.get(lender.id) ?? 0 })),
     jobs: jobRows,
-    errors: errorRows,
+    errors: Array.from(latestFailureByLender.values()).slice(0, 8),
   };
 }
 

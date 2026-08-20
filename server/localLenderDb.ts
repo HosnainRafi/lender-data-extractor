@@ -33,12 +33,18 @@ export async function getDashboard(userId: number) {
     const productRows = state.products.filter(item => item.userId === userId);
     const productCount = new Map<number, number>();
     productRows.filter(item => item.lifecycle !== "withdrawn").forEach(item => productCount.set(item.lenderId, (productCount.get(item.lenderId) ?? 0) + 1));
-    const lenderIds = new Set(lenderRows.map(item => item.id));
+    const latestFailureByLender = new Map<number, (typeof state.attempts)[number]>();
+    state.attempts
+      .filter(item => item.status === "failed")
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .forEach(attempt => {
+        if (!latestFailureByLender.has(attempt.lenderId)) latestFailureByLender.set(attempt.lenderId, attempt);
+      });
     return {
       summary: { lenders: lenderRows.length, currentProducts: productRows.filter(item => item.lifecycle === "current").length, pendingReview: productRows.filter(item => item.reviewStatus === "needs_review").length, failedLenders: lenderRows.filter(item => item.scrapeStatus === "failed").length },
       lenders: lenderRows.map(item => ({ ...item, productCount: productCount.get(item.id) ?? 0 })),
       jobs: state.jobs.filter(item => item.userId === userId).sort((a, b) => b.requestedAt.localeCompare(a.requestedAt)).slice(0, 8),
-      errors: state.attempts.filter(item => lenderIds.has(item.lenderId) && item.status === "failed").sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 8).map(attempt => ({ attempt, lenderName: state.lenders.find(item => item.id === attempt.lenderId)?.name ?? "Unknown lender" })),
+      errors: Array.from(latestFailureByLender.values()).slice(0, 8).map(attempt => ({ attempt, lenderName: state.lenders.find(item => item.id === attempt.lenderId)?.name ?? "Unknown lender" })),
     };
   });
 }

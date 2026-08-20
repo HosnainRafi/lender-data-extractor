@@ -8,26 +8,32 @@ This is a **local-first mortgage-product capture workspace**. It opens public le
 
 | Requirement | Why it is needed |
 | --- | --- |
-| Node.js 22+ and `pnpm` | Runs the web application and local file-backed data store. |
+| Node.js 22+ with npm or pnpm | Runs the web application and local file-backed data store. |
 | Google Chrome or Chromium | Renders JavaScript lender pages through a real local browser. |
 | `01-btl-mort_rates.xlsx` | Needed **only** for strict-format Excel export. |
 
 ## Run locally
 
-```bash
+```bat
 git clone <YOUR_GITHUB_REPOSITORY_URL>
 cd lender-data-extractor
-pnpm install
+npm install
 
-# Optional but required for strict reference-format XLSX exports.
-mkdir -p templates
-cp /path/to/01-btl-mort_rates.xlsx templates/01-btl-mort_rates.xlsx
-
-# Start the local-only application — no Docker, database command, API key, or .env file is needed.
-pnpm dev:local
+:: Start the local-only application — no Docker, database command, API key, or .env file is needed.
+npm run dev:local
 ```
 
 Open the URL printed in the terminal, usually `http://localhost:3000`. The local store is created automatically in `local-data/lender-data.json`. If Chrome is not in a normal location, create a `.env` file containing `BROWSER_EXECUTABLE_PATH=/full/path/to/chrome`; the app recognizes common Windows, macOS, and Linux Chrome paths automatically.
+
+### One-time Excel template setup
+
+The first time you select **Export workbook**, install your original reference file by running this command in the project folder. Replace the source path with wherever you saved the file:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-reference-workbook.ps1 -SourcePath "C:\Users\hp\Downloads\01-btl-mort_rates.xlsx"
+```
+
+The helper copies it to `templates\01-btl-mort_rates.xlsx`. Restart `npm run dev:local` only if the app was already open when you ran the helper. JSON export and single-lender scraping do not require this file.
 
 ## Use one lender link manually
 
