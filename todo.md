@@ -68,4 +68,4 @@
 - [x] Add regression tests for manual challenge recovery setup and flexible spreadsheet ingestion, then publish the completed workflow.
 - [x] Commit and push the manual CAPTCHA recovery and flexible CSV/XLSX/public-link import workflow to GitHub, then save a restorable checkpoint.
 - [x] Verify commit 5052003f95408d4d73ddbe601e8d40f60f29f78d is present on the public GitHub main branch.
-- [ ] Save a final checkpoint containing the manual CAPTCHA recovery and flexible spreadsheet-import workflow.
+- [x] Save a final checkpoint containing the manual CAPTCHA recovery and flexible spreadsheet-import workflow.
