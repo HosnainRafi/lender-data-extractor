@@ -66,4 +66,6 @@
 - [x] Allow lender intake from one manually entered lender URL, an uploaded CSV/XLSX workbook, or a public spreadsheet/download link.
 - [x] Add flexible column detection and mapping for lender name, main website URL, and product-page URL instead of requiring fixed G/J columns.
 - [x] Add regression tests for manual challenge recovery setup and flexible spreadsheet ingestion, then publish the completed workflow.
-- [ ] Commit and push the manual CAPTCHA recovery and flexible CSV/XLSX/public-link import workflow to GitHub, then save a restorable checkpoint.
+- [x] Commit and push the manual CAPTCHA recovery and flexible CSV/XLSX/public-link import workflow to GitHub, then save a restorable checkpoint.
+- [x] Verify commit 5052003f95408d4d73ddbe601e8d40f60f29f78d is present on the public GitHub main branch.
+- [ ] Save a final checkpoint containing the manual CAPTCHA recovery and flexible spreadsheet-import workflow.
