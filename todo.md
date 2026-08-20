@@ -73,3 +73,5 @@
 - [x] Add and validate the smallest compatible fix or clear user-recovery guidance for the Newcastle product page.
 - [x] Trace why a real Newcastle lender run shows no persisted products despite the successful parser verification.
 - [x] Repair and prove the full capture-to-persistence workflow stores Newcastle product records for the lender dashboard.
+- [x] Diagnose the alternate Newcastle source URL, including redirects, rendered content, and any regional-access limitation.
+- [x] Add and validate a compatible public-data extraction path or clear manual recovery guidance for the alternate Newcastle source.

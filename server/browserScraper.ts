@@ -38,6 +38,16 @@ function validateUrl(url: string): URL {
   }
 }
 
+/** The retired Newcastle endpoint now redirects to the homepage, not the live product list. */
+export function canonicalCaptureUrl(targetUrl: string): string {
+  const parsed = validateUrl(targetUrl);
+  const hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
+  if (hostname === "newcastleis.co.uk" && parsed.pathname.toLowerCase() === "/products.aspx") {
+    return "https://newcastleforintermediaries.co.uk/products/our-product-range";
+  }
+  return parsed.toString();
+}
+
 function isBlockedSnapshot(title: string, text: string, htmlHint: string) {
   return BLOCKED_MARKERS.some(marker => `${title}\n${text}\n${htmlHint}`.toLowerCase().includes(marker));
 }
@@ -62,7 +72,7 @@ export function manualChallengeRecoveryAvailability(): { available: boolean; mes
 }
 
 export async function captureWithBrowser(targetUrl: string): Promise<BrowserCapture> {
-  validateUrl(targetUrl);
+  const captureUrl = canonicalCaptureUrl(targetUrl);
   let browser: Awaited<ReturnType<typeof puppeteer.connect>> | undefined;
   let disconnectOnly = false;
   try {
@@ -80,7 +90,7 @@ export async function captureWithBrowser(targetUrl: string): Promise<BrowserCapt
     await page.setUserAgent("Mozilla/5.0 (compatible; MortgageDataExtractor/1.0; +local browser capture)");
     page.setDefaultNavigationTimeout(45_000);
     page.setDefaultTimeout(45_000);
-    await page.goto(targetUrl, { waitUntil: "networkidle2", timeout: 45_000 });
+    await page.goto(captureUrl, { waitUntil: "networkidle2", timeout: 45_000 });
     await page.waitForFunction(() => document.body?.innerText?.trim().length > 40, { timeout: 12_000 }).catch(() => undefined);
 
     const snapshot = await page.evaluate(() => ({ title: document.title.trim(), text: (document.body?.innerText ?? "").replace(/\s{3,}/g, "\n\n").trim(), htmlHint: document.documentElement.innerHTML.slice(0, 20_000).toLowerCase() }));
@@ -105,7 +115,7 @@ export async function captureWithBrowser(targetUrl: string): Promise<BrowserCapt
  * the user-verified page to become readable before returning the capture.
  */
 export async function captureAfterManualVerification(targetUrl: string): Promise<BrowserCapture> {
-  validateUrl(targetUrl);
+  const captureUrl = canonicalCaptureUrl(targetUrl);
   const availability = manualChallengeRecoveryAvailability();
   if (!availability.available) throw new BrowserCaptureError(availability.message, "browser");
 
@@ -120,7 +130,7 @@ export async function captureAfterManualVerification(targetUrl: string): Promise
     const page = (await browser.pages())[0] ?? await browser.newPage();
     page.setDefaultNavigationTimeout(45_000);
     page.setDefaultTimeout(45_000);
-    await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 45_000 });
+    await page.goto(captureUrl, { waitUntil: "domcontentloaded", timeout: 45_000 });
     await page.waitForFunction((markers: string[]) => {
       const text = (document.body?.innerText ?? "").trim();
       const documentText = `${document.title}\n${text}\n${document.documentElement?.innerHTML.slice(0, 20_000) ?? ""}`.toLowerCase();

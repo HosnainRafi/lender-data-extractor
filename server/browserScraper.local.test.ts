@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { browserCaptureMode, captureWithBrowser, localBrowserExecutable } from "./browserScraper";
+import { browserCaptureMode, canonicalCaptureUrl, captureWithBrowser, localBrowserExecutable } from "./browserScraper";
 
 const originalEndpoint = process.env.BROWSER_WS_ENDPOINT;
 const originalLocalMode = process.env.LOCAL_MODE;
@@ -24,4 +24,9 @@ describe("local Chromium capture", () => {
     expect(capture.text).toContain("Example Domain");
     expect(capture.screenshot.byteLength).toBeGreaterThan(100);
   }, 60_000);
+
+  it("maps the retired Newcastle product endpoint to the live public product range", () => {
+    expect(canonicalCaptureUrl("http://www.newcastleis.co.uk/products.aspx?ref=www.criteriahub.co.uk"))
+      .toBe("https://newcastleforintermediaries.co.uk/products/our-product-range");
+  });
 });

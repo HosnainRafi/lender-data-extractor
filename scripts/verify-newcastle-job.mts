@@ -15,9 +15,12 @@ const lenderDb = await import("../server/lenderDb");
 const { createAndRunJob } = await import("../server/jobRunner");
 
 const userId = 987654;
+const productPageUrl = process.argv.includes("--legacy-url")
+  ? "http://www.newcastleis.co.uk/products.aspx?ref=www.criteriahub.co.uk"
+  : "https://newcastleforintermediaries.co.uk/products/our-product-range";
 const lender = await lenderDb.addManualLender(userId, {
   name: "Newcastle for Intermediaries",
-  productPageUrl: "https://newcastleforintermediaries.co.uk/products/our-product-range",
+  productPageUrl,
 });
 const job = await createAndRunJob(userId, lender.id, "manual");
 const products = await lenderDb.getProducts(userId, lender.id);
