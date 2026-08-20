@@ -11,10 +11,10 @@ function lenderFromImport(state: Parameters<typeof withLocalState>[0] extends (s
   const timestamp = now();
   const existing = state.lenders.find(item => item.userId === userId && item.normalizedName === lender.normalizedName);
   if (existing) {
-    Object.assign(existing, { name: lender.name, mainWebsiteUrl: lender.mainWebsiteUrl, productPageUrl: lender.productPageUrl, sourceWorkbook: lender.sourceWorkbook, sourceRow: lender.sourceRow, updatedAt: timestamp });
+    Object.assign(existing, { name: lender.name, mainWebsiteUrl: lender.mainWebsiteUrl, productPageUrl: lender.productPageUrl, resiProductsUrl: lender.resiProductsUrl, btlProductsUrl: lender.btlProductsUrl, downloadMethod: lender.downloadMethod, resiDownloadUrl: lender.resiDownloadUrl, btlDownloadUrl: lender.btlDownloadUrl, sourceWorkbook: lender.sourceWorkbook, sourceRow: lender.sourceRow, updatedAt: timestamp });
     return existing;
   }
-  const created: LocalLender = { id: next(state, "lender"), userId, name: lender.name, normalizedName: lender.normalizedName, mainWebsiteUrl: lender.mainWebsiteUrl, productPageUrl: lender.productPageUrl, sourceWorkbook: lender.sourceWorkbook, sourceRow: lender.sourceRow, lastScrapedAt: null, scrapeStatus: "pending", lastErrorCategory: null, lastErrorMessage: null, createdAt: timestamp, updatedAt: timestamp };
+  const created: LocalLender = { id: next(state, "lender"), userId, name: lender.name, normalizedName: lender.normalizedName, mainWebsiteUrl: lender.mainWebsiteUrl, productPageUrl: lender.productPageUrl, resiProductsUrl: lender.resiProductsUrl, btlProductsUrl: lender.btlProductsUrl, downloadMethod: lender.downloadMethod, resiDownloadUrl: lender.resiDownloadUrl, btlDownloadUrl: lender.btlDownloadUrl, sourceWorkbook: lender.sourceWorkbook, sourceRow: lender.sourceRow, lastScrapedAt: null, scrapeStatus: "pending", lastErrorCategory: null, lastErrorMessage: null, createdAt: timestamp, updatedAt: timestamp };
   state.lenders.push(created);
   return created;
 }
@@ -24,7 +24,7 @@ export async function syncLenders(userId: number, entries: ImportedLender[]) {
 }
 
 export async function addManualLender(userId: number, input: { name: string; mainWebsiteUrl?: string | null; productPageUrl?: string | null }, normalizedName: string) {
-  return withLocalState(state => lenderFromImport(state, userId, { name: input.name.trim(), normalizedName, mainWebsiteUrl: input.mainWebsiteUrl ?? null, productPageUrl: input.productPageUrl ?? null, sourceWorkbook: "Manual local entry", sourceRow: 0 }));
+  return withLocalState(state => lenderFromImport(state, userId, { name: input.name.trim(), normalizedName, mainWebsiteUrl: input.mainWebsiteUrl ?? null, productPageUrl: input.productPageUrl ?? null, resiProductsUrl: null, btlProductsUrl: null, downloadMethod: null, resiDownloadUrl: null, btlDownloadUrl: null, sourceWorkbook: "Manual local entry", sourceRow: 0 }));
 }
 
 export async function getDashboard(userId: number) {

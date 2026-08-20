@@ -15,6 +15,13 @@
       "when": 1787223611117,
       "tag": "0001_goofy_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1788000000000,
+      "tag": "0002_airy_cannonball",
+      "breakpoints": true
     }
   ]
 }

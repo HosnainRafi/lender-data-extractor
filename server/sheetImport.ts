@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import type { LenderSourceLinks } from "../shared/lenderTypes";
 
 type CsvRow = string[];
 
@@ -7,11 +8,9 @@ const SOURCE_SHEETS = [
   { label: "LENDER LIST - FINAL", id: "1Tx0uHOEZqzgB8yufiemO3A6xRzAo0op0WocbQfiIY2A", gid: "1794590520" },
 ] as const;
 
-export type ImportedLender = {
+export type ImportedLender = LenderSourceLinks & {
   name: string;
   normalizedName: string;
-  mainWebsiteUrl: string | null;
-  productPageUrl: string | null;
   sourceWorkbook: string;
   sourceRow: number;
 };
@@ -23,11 +22,14 @@ export type FlexibleImportInput = {
   fileBase64?: string;
 };
 
+const LENDER_STOPWORDS =
+  /\b(mortgages?|mortgaes?|building\s+societ(?:y|ies)|societ(?:y|ies)|bank|banking|limited|ltd|plc|the|group|uk|co|finance|lending|intermediar(?:y|ies)|for|of|product|products|list|bs)\b/g;
+
 export function normalizeLenderName(value: string): string {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\b(mortgages?|building society|bank|limited|ltd|plc|the)\b/g, " ")
+    .replace(LENDER_STOPWORDS, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -129,7 +131,7 @@ function inferredRowLender(row: CsvRow, sourceWorkbook: string, sourceRow: numbe
   const name = namedValue.trim();
   const normalizedName = normalizeLenderName(name);
   if (!normalizedName || (!mainWebsiteUrl && !productPageUrl)) return null;
-  return { name, normalizedName, mainWebsiteUrl, productPageUrl, sourceWorkbook, sourceRow };
+  return { name, normalizedName, mainWebsiteUrl, productPageUrl, resiProductsUrl: null, btlProductsUrl: null, downloadMethod: null, resiDownloadUrl: null, btlDownloadUrl: null, sourceWorkbook, sourceRow };
 }
 
 export function inferFlexibleLenders(rows: CsvRow[], sourceWorkbook: string): ImportedLender[] {
@@ -176,38 +178,68 @@ export async function importFlexibleLenders(input: FlexibleImportInput): Promise
   return lenders;
 }
 
+/**
+ * Column layout for the authoritative `LENDER LIST - FINAL` sheet:
+ *   0 name | 6 main website | 9 products | 13 resi products | 17 BTL products
+ *   22 download method | 23 resi download link | 25 BTL download link
+ */
 export async function importConfiguredLenders(): Promise<ImportedLender[]> {
   const sourceRows = await Promise.all(SOURCE_SHEETS.map(source => downloadSheet(source.id, source.gid)));
-  const primary = sourceRows[0] ?? [];
-  const fallback = sourceRows[1] ?? [];
-  const fallbackByName = new Map<string, ImportedLender>();
-  fallback.slice(1).forEach((row, offset) => {
-    const name = (row[0] ?? "").trim();
-    if (!name) return;
-    const normalizedName = normalizeLenderName(name);
-    const mainWebsiteUrl = validWebsite(row[6]);
-    const productPageUrl = validWebsite(row[9]);
-    if (!mainWebsiteUrl && !productPageUrl) return;
-    fallbackByName.set(normalizedName, { name, normalizedName, mainWebsiteUrl, productPageUrl, sourceWorkbook: SOURCE_SHEETS[1].label, sourceRow: offset + 2 });
-  });
+  const statusRows = sourceRows[0] ?? []; // status tracker (may carry fresh product URLs in its NEW section)
+  const finalRows = sourceRows[1] ?? []; // authoritative lender list with all URLs + download links
 
   const imported = new Map<string, ImportedLender>();
-  primary.slice(1).forEach((row, offset) => {
+
+  // 1) Authoritative list first: every lender row with any usable URL or download link.
+  finalRows.slice(1).forEach((row, offset) => {
+    const name = (row[0] ?? "").trim();
+    if (!name) return;
+    const lender: ImportedLender = {
+      name,
+      normalizedName: normalizeLenderName(name),
+      mainWebsiteUrl: validWebsite(row[6]),
+      productPageUrl: validWebsite(row[9]),
+      resiProductsUrl: validWebsite(row[13]),
+      btlProductsUrl: validWebsite(row[17]),
+      downloadMethod: (row[22] ?? "").trim() || null,
+      resiDownloadUrl: validWebsite(row[23]),
+      btlDownloadUrl: validWebsite(row[25]),
+      sourceWorkbook: SOURCE_SHEETS[1].label,
+      sourceRow: offset + 2,
+    };
+    if (!lender.mainWebsiteUrl && !lender.productPageUrl && !lender.resiProductsUrl && !lender.btlProductsUrl && !lender.resiDownloadUrl && !lender.btlDownloadUrl) return;
+    imported.set(lender.normalizedName, lender);
+  });
+
+  // 2) Status-sheet overlay: rows in the tracker that carry their own URL (the NEW section)
+  //    provide the freshest, human-verified product page and take precedence.
+  statusRows.slice(1).forEach((row, offset) => {
     const name = (row[1] ?? "").trim();
     if (!name) return;
+    const urlsInRow = row.map(validWebsite);
+    const rowUrl = urlsInRow.find(Boolean) ?? null;
+    if (!rowUrl) return; // no URL in this tracker row; the final sheet already covers it
     const normalizedName = normalizeLenderName(name);
-    const fallbackMatch = fallbackByName.get(normalizedName);
+    const existing = imported.get(normalizedName);
+    if (existing) {
+      existing.productPageUrl = rowUrl;
+      existing.sourceWorkbook = `${SOURCE_SHEETS[0].label} + ${SOURCE_SHEETS[1].label}`;
+      return;
+    }
     imported.set(normalizedName, {
       name,
       normalizedName,
-      mainWebsiteUrl: validWebsite(row[6]) ?? fallbackMatch?.mainWebsiteUrl ?? null,
-      productPageUrl: validWebsite(row[9]) ?? fallbackMatch?.productPageUrl ?? null,
-      sourceWorkbook: fallbackMatch ? `${SOURCE_SHEETS[0].label} + ${SOURCE_SHEETS[1].label}` : SOURCE_SHEETS[0].label,
+      mainWebsiteUrl: null,
+      productPageUrl: rowUrl,
+      resiProductsUrl: null,
+      btlProductsUrl: null,
+      downloadMethod: null,
+      resiDownloadUrl: null,
+      btlDownloadUrl: null,
+      sourceWorkbook: SOURCE_SHEETS[0].label,
       sourceRow: offset + 2,
     });
   });
-  fallbackByName.forEach((lender, normalizedName) => {
-    if (!imported.has(normalizedName)) imported.set(normalizedName, lender);
-  });
-  return Array.from(imported.values()).filter(lender => lender.mainWebsiteUrl || lender.productPageUrl);
+
+  return Array.from(imported.values()).filter(lender => lender.mainWebsiteUrl || lender.productPageUrl || lender.resiProductsUrl || lender.btlProductsUrl || lender.resiDownloadUrl || lender.btlDownloadUrl);
 }

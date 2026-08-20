@@ -4,6 +4,7 @@ import type { MortgageProductData } from "../shared/lenderTypes";
 
 export type LocalLender = {
   id: number; userId: number; name: string; normalizedName: string; mainWebsiteUrl: string | null; productPageUrl: string | null;
+  resiProductsUrl: string | null; btlProductsUrl: string | null; downloadMethod: string | null; resiDownloadUrl: string | null; btlDownloadUrl: string | null;
   sourceWorkbook: string; sourceRow: number | null; lastScrapedAt: string | null; scrapeStatus: "pending" | "running" | "success" | "failed";
   lastErrorCategory: string | null; lastErrorMessage: string | null; createdAt: string; updatedAt: string;
 };

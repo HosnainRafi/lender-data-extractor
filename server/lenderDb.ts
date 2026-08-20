@@ -24,6 +24,11 @@ export async function syncLenders(userId: number, sourceLenders: ImportedLender[
       normalizedName: lender.normalizedName,
       mainWebsiteUrl: lender.mainWebsiteUrl,
       productPageUrl: lender.productPageUrl,
+      resiProductsUrl: lender.resiProductsUrl,
+      btlProductsUrl: lender.btlProductsUrl,
+      downloadMethod: lender.downloadMethod,
+      resiDownloadUrl: lender.resiDownloadUrl,
+      btlDownloadUrl: lender.btlDownloadUrl,
       sourceWorkbook: lender.sourceWorkbook,
       sourceRow: lender.sourceRow,
     }).onDuplicateKeyUpdate({
@@ -31,6 +36,11 @@ export async function syncLenders(userId: number, sourceLenders: ImportedLender[
         name: lender.name,
         mainWebsiteUrl: lender.mainWebsiteUrl,
         productPageUrl: lender.productPageUrl,
+        resiProductsUrl: lender.resiProductsUrl,
+        btlProductsUrl: lender.btlProductsUrl,
+        downloadMethod: lender.downloadMethod,
+        resiDownloadUrl: lender.resiDownloadUrl,
+        btlDownloadUrl: lender.btlDownloadUrl,
         sourceWorkbook: lender.sourceWorkbook,
         sourceRow: lender.sourceRow,
       },
@@ -48,6 +58,7 @@ export async function addManualLender(userId: number, input: { name: string; mai
   const database = await requireDb();
   await database.insert(lenders).values({
     userId, name, normalizedName, mainWebsiteUrl: input.mainWebsiteUrl ?? null, productPageUrl: input.productPageUrl ?? null,
+    resiProductsUrl: null, btlProductsUrl: null, downloadMethod: null, resiDownloadUrl: null, btlDownloadUrl: null,
     sourceWorkbook: "Manual local entry", sourceRow: 0,
   }).onDuplicateKeyUpdate({
     set: { name, mainWebsiteUrl: input.mainWebsiteUrl ?? null, productPageUrl: input.productPageUrl ?? null, sourceWorkbook: "Manual local entry", sourceRow: 0 },

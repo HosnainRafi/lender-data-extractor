@@ -15,7 +15,27 @@ export class BrowserCaptureError extends Error {
   }
 }
 
-const BLOCKED_MARKERS = ["captcha", "verify you are human", "access denied", "unusual traffic", "cf-chl-", "just a moment", "perimeterx"];
+export const BROWSER_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+const BLOCKED_MARKERS = [
+  "captcha",
+  "verify you are human",
+  "access denied",
+  "unusual traffic",
+  "cf-chl-",
+  "just a moment",
+  "perimeterx",
+  "hcaptcha",
+  "recaptcha",
+  "not a robot",
+  "challenge-platform",
+  "datadome",
+  "incapsula",
+  "akamai",
+  "attention required",
+  "security check",
+];
 const LOCAL_BROWSER_CANDIDATES = [
   process.env.BROWSER_EXECUTABLE_PATH,
   process.env.CHROME_PATH,
@@ -82,12 +102,12 @@ export async function captureWithBrowser(targetUrl: string): Promise<BrowserCapt
     } else {
       const executablePath = localBrowserExecutable();
       if (!executablePath) throw new BrowserCaptureError("No local Chromium executable was found. Install Google Chrome or Chromium and set BROWSER_EXECUTABLE_PATH.", "browser");
-      browser = await puppeteer.launch({ executablePath, headless: true, args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"] });
+      browser = await puppeteer.launch({ executablePath, headless: true, args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-blink-features=AutomationControlled"] });
     }
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1200, deviceScaleFactor: 1 });
-    await page.setUserAgent("Mozilla/5.0 (compatible; MortgageDataExtractor/1.0; +local browser capture)");
+    await page.setUserAgent(BROWSER_USER_AGENT);
     page.setDefaultNavigationTimeout(45_000);
     page.setDefaultTimeout(45_000);
     await page.goto(captureUrl, { waitUntil: "networkidle2", timeout: 45_000 });

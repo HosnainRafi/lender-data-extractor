@@ -47,9 +47,11 @@ You **do not need to give the full XLSX file** to scrape one lender or download 
 
 ## Optional Google Sheet import
 
-The **Sync sheets** control imports the two configured public Google Sheets and uses **column G** as the main website URL and **column J** as the product-page URL. This is optional; direct manual entry is preferable when you want to work one lender at a time.
+The **Sync sheets** control imports both configured public Google Sheets. It reads the authoritative **LENDER LIST - FINAL** sheet (lender name, main website, product page, residential/BTL product pages, and the direct product-data download links) and overlays any fresh, human-verified product URLs found in the **Lender Data Update** status sheet. This is optional; direct manual entry is preferable when you want to work one lender at a time.
 
 ## Accuracy and website access
+
+When a lender row carries a direct product-data download link (JSON, CSV, XLSX, or PDF), the extractor downloads and parses that file first, then falls back to rendering the product page in the browser. This covers lenders such as Accord (JSON), TSB (PDF), and many building societies that publish their rate cards as downloadable files rather than on-page tables.
 
 The local no-API extractor is deterministic: it looks for visible rate, LTV, term, and product hints in the browser-rendered page. It intentionally assigns **40% confidence** and requires review. It is helpful for structured public product tables, but it cannot honestly be guaranteed to be **90% or 100% correct** across every lender site.
 

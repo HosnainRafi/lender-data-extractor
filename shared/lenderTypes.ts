@@ -41,6 +41,17 @@ export type ExtractedProductsResponse = {
   pageClassification: "product_page" | "document" | "blocked" | "no_product_data";
 };
 
+/** Source URLs and direct product-data download links captured for a lender. */
+export type LenderSourceLinks = {
+  mainWebsiteUrl: string | null;
+  productPageUrl: string | null;
+  resiProductsUrl: string | null;
+  btlProductsUrl: string | null;
+  downloadMethod: string | null;
+  resiDownloadUrl: string | null;
+  btlDownloadUrl: string | null;
+};
+
 export const referenceColumns = [
   "Code",
   "Product",
