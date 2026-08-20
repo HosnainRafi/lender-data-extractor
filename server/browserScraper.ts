@@ -32,7 +32,7 @@ export function localBrowserExecutable(): string | undefined {
 }
 
 export function browserCaptureMode(): "remote" | "local" | "unconfigured" {
-  if (process.env.BROWSER_WS_ENDPOINT) return "remote";
+  if (process.env.LOCAL_MODE !== "true" && process.env.BROWSER_WS_ENDPOINT) return "remote";
   return localBrowserExecutable() ? "local" : "unconfigured";
 }
 
@@ -41,7 +41,7 @@ export async function captureWithBrowser(targetUrl: string): Promise<BrowserCapt
   let browser: Awaited<ReturnType<typeof puppeteer.connect>> | undefined;
   let disconnectOnly = false;
   try {
-    if (process.env.BROWSER_WS_ENDPOINT) {
+    if (process.env.LOCAL_MODE !== "true" && process.env.BROWSER_WS_ENDPOINT) {
       browser = await puppeteer.connect({ browserWSEndpoint: process.env.BROWSER_WS_ENDPOINT });
       disconnectOnly = true;
     } else {
