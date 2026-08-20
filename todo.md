@@ -29,3 +29,8 @@
 - [x] Run the documented local-only database, migration, startup, manual-entry, local-browser, and artifact-download workflow end to end.
 - [x] Verify the local artifact route by retrieving a generated screenshot or text file through the running local application.
 - [x] Record the sandbox-specific Docker networking limitation while retaining the standard Docker Compose instructions for compatible local machines.
+- [x] Replace the Docker/MySQL dependency in local mode with a file-backed local data store.
+- [x] Make the local startup path work with only `pnpm install` and `pnpm dev:local` plus a local browser installation.
+- [x] Update the user documentation to explain manual URL entry and optional spreadsheet import without Docker.
+- [ ] Test the full no-Docker local workflow and push the revision to the private repository.
+- [x] Add automated coverage proving manual lenders and scrape job state persist to the local JSON store without MySQL.

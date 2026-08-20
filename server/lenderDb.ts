@@ -5,6 +5,8 @@ import type { MortgageProductData, ProductLifecycle, ReviewStatus } from "../sha
 import { normalizeLenderName, type ImportedLender } from "./sheetImport";
 import { productFingerprint } from "./productExtraction";
 import { lifecycleForObservedRecord, withdrawnFingerprints } from "../shared/lifecycle";
+import { isLocalMode } from "./localStore";
+import * as local from "./localLenderDb";
 
 async function requireDb() {
   const database = await getDb();
@@ -13,6 +15,7 @@ async function requireDb() {
 }
 
 export async function syncLenders(userId: number, sourceLenders: ImportedLender[]) {
+  if (isLocalMode()) return local.syncLenders(userId, sourceLenders);
   const database = await requireDb();
   for (const lender of sourceLenders) {
     await database.insert(lenders).values({
@@ -41,6 +44,7 @@ export async function addManualLender(userId: number, input: { name: string; mai
   const normalizedName = normalizeLenderName(name);
   if (!normalizedName) throw new Error("A lender name is required.");
   if (!input.mainWebsiteUrl && !input.productPageUrl) throw new Error("Provide a lender website or product-page URL.");
+  if (isLocalMode()) return local.addManualLender(userId, input, normalizedName);
   const database = await requireDb();
   await database.insert(lenders).values({
     userId, name, normalizedName, mainWebsiteUrl: input.mainWebsiteUrl ?? null, productPageUrl: input.productPageUrl ?? null,
@@ -52,6 +56,7 @@ export async function addManualLender(userId: number, input: { name: string; mai
 }
 
 export async function getDashboard(userId: number) {
+  if (isLocalMode()) return local.getDashboard(userId);
   const database = await requireDb();
   const [lenderRows, productRows, jobRows, errorRows] = await Promise.all([
     database.select().from(lenders).where(eq(lenders.userId, userId)).orderBy(asc(lenders.name)),
@@ -81,6 +86,7 @@ export async function getDashboard(userId: number) {
 }
 
 export async function createJob(userId: number, lenderId: number | null, trigger: "manual" | "retry" | "scheduled" | "sheet_sync") {
+  if (isLocalMode()) return local.createJob(userId, lenderId, trigger);
   const database = await requireDb();
   const targets = lenderId
     ? await database.select().from(lenders).where(and(eq(lenders.id, lenderId), eq(lenders.userId, userId)))
@@ -92,16 +98,19 @@ export async function createJob(userId: number, lenderId: number | null, trigger
 }
 
 export async function getJob(userId: number, jobId: number) {
+  if (isLocalMode()) return local.getJob(userId, jobId);
   const database = await requireDb();
   return (await database.select().from(scrapeJobs).where(and(eq(scrapeJobs.id, jobId), eq(scrapeJobs.userId, userId))).limit(1))[0] ?? null;
 }
 
 export async function getQueuedJob(userId: number) {
+  if (isLocalMode()) return local.getQueuedJob(userId);
   const database = await requireDb();
   return (await database.select().from(scrapeJobs).where(and(eq(scrapeJobs.userId, userId), eq(scrapeJobs.status, "queued"))).orderBy(asc(scrapeJobs.requestedAt)).limit(1))[0] ?? null;
 }
 
 export async function cancelQueuedJob(userId: number, jobId: number) {
+  if (isLocalMode()) return local.cancelQueuedJob(userId, jobId);
   const database = await requireDb();
   const job = await getJob(userId, jobId);
   if (!job) throw new Error("Scrape job not found.");
@@ -111,6 +120,7 @@ export async function cancelQueuedJob(userId: number, jobId: number) {
 }
 
 export async function listJobTargets(userId: number, jobId: number) {
+  if (isLocalMode()) return local.listJobTargets(userId, jobId);
   const job = await getJob(userId, jobId);
   if (!job) throw new Error("Scrape job not found.");
   const database = await requireDb();
@@ -119,21 +129,25 @@ export async function listJobTargets(userId: number, jobId: number) {
 }
 
 export async function setJobRunning(jobId: number) {
+  if (isLocalMode()) return local.setJobRunning(jobId);
   const database = await requireDb();
   await database.update(scrapeJobs).set({ status: "running", startedAt: new Date() }).where(eq(scrapeJobs.id, jobId));
 }
 
 export async function updateJobProgress(jobId: number, patch: { processedLenders: number; successfulLenders: number; failedLenders: number; status: "queued" | "completed" | "failed"; errorMessage?: string | null }) {
+  if (isLocalMode()) return local.updateJobProgress(jobId, patch);
   const database = await requireDb();
   await database.update(scrapeJobs).set({ ...patch, finishedAt: patch.status === "completed" || patch.status === "failed" ? new Date() : null }).where(eq(scrapeJobs.id, jobId));
 }
 
 export async function markLenderRunning(lenderId: number) {
+  if (isLocalMode()) return local.markLenderRunning(lenderId);
   const database = await requireDb();
   await database.update(lenders).set({ scrapeStatus: "running", lastErrorCategory: null, lastErrorMessage: null }).where(eq(lenders.id, lenderId));
 }
 
 export async function markLenderResult(lenderId: number, status: "success" | "failed", error?: { category: "blocked" | "timeout" | "empty" | "invalid_url" | "browser" | "extraction" | "unknown"; message: string }) {
+  if (isLocalMode()) return local.markLenderResult(lenderId, status, error);
   const database = await requireDb();
   await database.update(lenders).set({
     scrapeStatus: status,
@@ -144,17 +158,20 @@ export async function markLenderResult(lenderId: number, status: "success" | "fa
 }
 
 export async function createAttempt(lenderId: number, scrapeJobId: number, targetUrl: string) {
+  if (isLocalMode()) return local.createAttempt(lenderId, scrapeJobId, targetUrl);
   const database = await requireDb();
   const result = await database.insert(scrapeAttempts).values({ lenderId, scrapeJobId, targetUrl, status: "pending" });
   return Number(result[0].insertId);
 }
 
 export async function completeAttempt(attemptId: number, patch: { status: "success" | "failed"; finalUrl?: string; pageTitle?: string; pageTextKey?: string; screenshotKey?: string; errorCategory?: "blocked" | "timeout" | "empty" | "invalid_url" | "browser" | "extraction" | "unknown"; errorMessage?: string }) {
+  if (isLocalMode()) return local.completeAttempt(attemptId, patch);
   const database = await requireDb();
   await database.update(scrapeAttempts).set({ ...patch, completedAt: new Date() }).where(eq(scrapeAttempts.id, attemptId));
 }
 
 export async function persistExtractedProducts(userId: number, lenderId: number, scrapeJobId: number, extracted: Array<MortgageProductData & { confidence: number }>) {
+  if (isLocalMode()) return local.persistExtractedProducts(userId, lenderId, scrapeJobId, extracted);
   const database = await requireDb();
   const existing = await database.select().from(products).where(and(eq(products.userId, userId), eq(products.lenderId, lenderId)));
   const activeRateProducts = existing.filter(product => product.lifecycle === "current" || product.lifecycle === "new");
@@ -191,6 +208,7 @@ export async function persistExtractedProducts(userId: number, lenderId: number,
 }
 
 export async function getProducts(userId: number, lenderId?: number) {
+  if (isLocalMode()) return local.getProducts(userId, lenderId);
   const database = await requireDb();
   const productRows = await database.select().from(products).where(lenderId ? and(eq(products.userId, userId), eq(products.lenderId, lenderId)) : eq(products.userId, userId)).orderBy(desc(products.updatedAt));
   const lenderIds = Array.from(new Set(productRows.map(product => product.lenderId)));
@@ -200,6 +218,7 @@ export async function getProducts(userId: number, lenderId?: number) {
 }
 
 export async function updateProduct(userId: number, productId: number, data: MortgageProductData, reviewStatus: ReviewStatus) {
+  if (isLocalMode()) return local.updateProduct(userId, productId, data, reviewStatus);
   const database = await requireDb();
   const current = (await database.select().from(products).where(and(eq(products.id, productId), eq(products.userId, userId))).limit(1))[0];
   if (!current) throw new Error("Product not found.");
@@ -208,17 +227,20 @@ export async function updateProduct(userId: number, productId: number, data: Mor
 }
 
 export async function getRefreshSettings(userId: number) {
+  if (isLocalMode()) return local.getRefreshSettings(userId);
   const database = await requireDb();
   return (await database.select().from(refreshSettings).where(eq(refreshSettings.userId, userId)).limit(1))[0] ?? null;
 }
 
 export async function saveRefreshSettings(userId: number, input: { cronExpression: string; isEnabled: boolean; scheduleCronTaskUid?: string | null; nextExecutionAt?: Date | null }) {
+  if (isLocalMode()) return local.saveRefreshSettings(userId, input);
   const database = await requireDb();
   await database.insert(refreshSettings).values({ userId, ...input }).onDuplicateKeyUpdate({ set: input });
   return getRefreshSettings(userId);
 }
 
 export async function getRefreshSettingsByTaskUid(taskUid: string) {
+  if (isLocalMode()) return local.getRefreshSettingsByTaskUid(taskUid);
   const database = await requireDb();
   return (await database.select().from(refreshSettings).where(eq(refreshSettings.scheduleCronTaskUid, taskUid)).limit(1))[0] ?? null;
 }

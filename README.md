@@ -8,8 +8,7 @@ This is a **local-first mortgage-product capture workspace**. It opens public le
 
 | Requirement | Why it is needed |
 | --- | --- |
-| Node.js 22+ and `pnpm` | Runs the web application. |
-| Docker Desktop | Runs the local MySQL database. |
+| Node.js 22+ and `pnpm` | Runs the web application and local file-backed data store. |
 | Google Chrome or Chromium | Renders JavaScript lender pages through a real local browser. |
 | `01-btl-mort_rates.xlsx` | Needed **only** for strict-format Excel export. |
 
@@ -20,30 +19,15 @@ git clone <YOUR_GITHUB_REPOSITORY_URL>
 cd lender-data-extractor
 pnpm install
 
-# Start the local database and wait until it is healthy.
-docker compose -f docker-compose.local.yml up -d
-
 # Optional but required for strict reference-format XLSX exports.
 mkdir -p templates
 cp /path/to/01-btl-mort_rates.xlsx templates/01-btl-mort_rates.xlsx
 
-# Create the local-only configuration.
-cat > .env <<'EOF'
-LOCAL_MODE=true
-LOCAL_EXTRACTOR=rules
-DATABASE_URL=mysql://lender:lender_local_password@127.0.0.1:3306/lender_data_extractor
-# Set this only when Chrome/Chromium is not in a normal system location.
-BROWSER_EXECUTABLE_PATH=/usr/bin/google-chrome
-REFERENCE_WORKBOOK_PATH=templates/01-btl-mort_rates.xlsx
-LOCAL_ARTIFACTS_DIR=local-artifacts
-EOF
-
-# Create the database tables, then start the app.
-pnpm drizzle-kit migrate
-pnpm dev
+# Start the local-only application — no Docker, database command, API key, or .env file is needed.
+pnpm dev:local
 ```
 
-Open the URL printed in the terminal, usually `http://localhost:3000`. On macOS, set `BROWSER_EXECUTABLE_PATH` to `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`; on Windows, use the full `chrome.exe` path. On Linux, use `/usr/bin/google-chrome` or `/usr/bin/chromium`.
+Open the URL printed in the terminal, usually `http://localhost:3000`. The local store is created automatically in `local-data/lender-data.json`. If Chrome is not in a normal location, create a `.env` file containing `BROWSER_EXECUTABLE_PATH=/full/path/to/chrome`; the app recognizes common Windows, macOS, and Linux Chrome paths automatically.
 
 ## Use one lender link manually
 
@@ -71,8 +55,8 @@ For better consistency without a hosted AI service, use direct product/rate page
 
 | Location | Contents |
 | --- | --- |
-| Local MySQL Docker volume | Lenders, jobs, products, review decisions, and history. |
+| `local-data/lender-data.json` | Lenders, jobs, products, review decisions, schedules, and history. |
 | `local-artifacts/` | Captured text, screenshots, and exported workbook files. |
 | `templates/01-btl-mort_rates.xlsx` | Your local Excel reference template; do not commit it if it is confidential. |
 
-Stop the application with `Ctrl+C`. Stop the database with `docker compose -f docker-compose.local.yml down`. Add `-v` only if you intentionally want to delete all locally stored lender data.
+Stop the application with `Ctrl+C`. Delete `local-data/` only if you intentionally want to remove all locally stored lender data.

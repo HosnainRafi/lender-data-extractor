@@ -15,7 +15,17 @@ export class BrowserCaptureError extends Error {
 }
 
 const BLOCKED_MARKERS = ["captcha", "verify you are human", "access denied", "unusual traffic", "cf-chl-", "just a moment", "perimeterx"];
-const LOCAL_BROWSER_CANDIDATES = [process.env.BROWSER_EXECUTABLE_PATH, process.env.CHROME_PATH, "/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser"].filter((value): value is string => Boolean(value));
+const LOCAL_BROWSER_CANDIDATES = [
+  process.env.BROWSER_EXECUTABLE_PATH,
+  process.env.CHROME_PATH,
+  "/usr/bin/google-chrome",
+  "/usr/bin/google-chrome-stable",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+].filter((value): value is string => Boolean(value));
 
 function validateUrl(url: string): URL {
   try {

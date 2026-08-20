@@ -15,9 +15,8 @@ export async function createContext(
   let user: User | null = null;
 
   if (process.env.LOCAL_MODE === "true") {
-    const openId = "local-operator";
-    await upsertUser({ openId, name: "Local Operator", email: null, loginMethod: "local", role: "admin" });
-    user = await getUserByOpenId(openId) ?? null;
+    const timestamp = new Date();
+    user = { id: 1, openId: "local-operator", name: "Local Operator", email: null, loginMethod: "local", role: "admin", createdAt: timestamp, updatedAt: timestamp, lastSignedIn: timestamp };
   } else {
     try {
       user = await sdk.authenticateRequest(opts.req);
