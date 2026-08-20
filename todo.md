@@ -32,5 +32,5 @@
 - [x] Replace the Docker/MySQL dependency in local mode with a file-backed local data store.
 - [x] Make the local startup path work with only `pnpm install` and `pnpm dev:local` plus a local browser installation.
 - [x] Update the user documentation to explain manual URL entry and optional spreadsheet import without Docker.
-- [ ] Test the full no-Docker local workflow and push the revision to the private repository.
+- [x] Test the full no-Docker local workflow and push the revision to the private repository.
 - [x] Add automated coverage proving manual lenders and scrape job state persist to the local JSON store without MySQL.
