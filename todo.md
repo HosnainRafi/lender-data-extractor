@@ -58,3 +58,4 @@
 - [x] Run the documented `npm run dev:local` command after the manual-lender repair and verify an OAuth-free, missing-export-free startup.
 - [x] Add and run lender-scoped XLSX export coverage proving one lender’s workbook excludes all other lenders’ products.
 - [x] Seed two lenders, render a workbook from the selected lender’s retrieved products, and assert the other lender’s group and rows are absent.
+- [x] Render a reference workbook from the corrected Chorley parser output and assert its code, rate, LTV, and APRC cells are retained.
