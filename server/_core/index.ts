@@ -4,10 +4,8 @@ import { localArtifactsDirectory } from "../storage";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
-import { handleScheduledLenderRefresh } from "../scheduledRefresh";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -38,8 +36,12 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   if (process.env.LOCAL_MODE === "true") app.use("/local-artifacts", express.static(localArtifactsDirectory));
   registerStorageProxy(app);
-  registerOAuthRoutes(app);
-  app.post("/api/scheduled/lender-refresh", handleScheduledLenderRefresh);
+  if (process.env.LOCAL_MODE !== "true") {
+    const { registerOAuthRoutes } = await import("./oauth");
+    const { handleScheduledLenderRefresh } = await import("../scheduledRefresh");
+    registerOAuthRoutes(app);
+    app.post("/api/scheduled/lender-refresh", handleScheduledLenderRefresh);
+  }
   // tRPC API
   app.use(
     "/api/trpc",

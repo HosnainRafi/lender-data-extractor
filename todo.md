@@ -34,3 +34,8 @@
 - [x] Update the user documentation to explain manual URL entry and optional spreadsheet import without Docker.
 - [x] Test the full no-Docker local workflow and push the revision to the private repository.
 - [x] Add automated coverage proving manual lenders and scrape job state persist to the local JSON store without MySQL.
+- [x] Prevent OAuth SDK initialization from requiring OAUTH_SERVER_URL when LOCAL_MODE is enabled.
+- [x] Add a regression test for the OAuth-free local startup configuration.
+- [x] Verify and publish the corrected Windows local startup workflow.
+- [ ] Push the OAuth-free local startup fix to the private GitHub repository and confirm the updated branch.
+- [ ] Save a checkpoint containing the verified OAuth-free local startup fix.
