@@ -6,10 +6,10 @@ import { createHeartbeatJob, updateHeartbeatJob } from "./_core/heartbeat";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { createReferenceWorkbook } from "./excelExport";
-import { createAndRunJob, runJobSegment } from "./jobRunner";
+import { createAndRunJob, recoverBlockedLender, runJobSegment } from "./jobRunner";
 import { addManualLender, cancelQueuedJob, getDashboard, getProducts, getRefreshSettings, saveRefreshSettings, syncLenders, updateProduct } from "./lenderDb";
 import { extractMortgageProducts } from "./productExtraction";
-import { importConfiguredLenders } from "./sheetImport";
+import { importConfiguredLenders, importFlexibleLenders } from "./sheetImport";
 
 const productInput = z.object({
   code: z.string().nullable(), product: z.string().min(1), purpose: z.string().nullable(), maxLtv: z.number().nullable(), rate: z.number().nullable(), aprc: z.number().nullable(),
@@ -38,8 +38,13 @@ export const appRouter = router({
       const imported = await importConfiguredLenders();
       return syncLenders(ctx.user.id, imported);
     }),
+    importSource: protectedProcedure.input(z.object({ sourceLabel: z.string().trim().max(160).optional(), sourceUrl: z.string().url().optional(), fileName: z.string().trim().max(255).optional(), fileBase64: z.string().max(21_000_000).optional() }).refine(input => Boolean(input.sourceUrl || input.fileBase64), { message: "Choose a file or provide a public spreadsheet link." })).mutation(async ({ ctx, input }) => {
+      const imported = await importFlexibleLenders(input);
+      return syncLenders(ctx.user.id, imported);
+    }),
     addManual: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(160), mainWebsiteUrl: z.string().url().nullable().optional(), productPageUrl: z.string().url().nullable().optional() }).refine(input => Boolean(input.mainWebsiteUrl || input.productPageUrl), { message: "Provide a lender website or product-page URL." })).mutation(({ ctx, input }) => addManualLender(ctx.user.id, input)),
     run: protectedProcedure.input(z.object({ lenderId: z.number().int().positive().nullable(), trigger: z.enum(["manual", "retry"]).default("manual") })).mutation(({ ctx, input }) => createAndRunJob(ctx.user.id, input.lenderId, input.trigger)),
+    recoverBlocked: protectedProcedure.input(z.object({ lenderId: z.number().int().positive() })).mutation(({ ctx, input }) => recoverBlockedLender(ctx.user.id, input.lenderId)),
     continueRun: protectedProcedure.input(z.object({ jobId: z.number().int().positive() })).mutation(({ ctx, input }) => runJobSegment(ctx.user.id, input.jobId)),
     cancelRun: protectedProcedure.input(z.object({ jobId: z.number().int().positive() })).mutation(({ ctx, input }) => cancelQueuedJob(ctx.user.id, input.jobId)),
     products: protectedProcedure.input(z.object({ lenderId: z.number().int().positive().optional() }).optional()).query(({ ctx, input }) => getProducts(ctx.user.id, input?.lenderId)),

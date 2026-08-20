@@ -1,4 +1,4 @@
-import { captureWithBrowser, BrowserCaptureError } from "./browserScraper";
+import { captureAfterManualVerification, captureWithBrowser, BrowserCaptureError } from "./browserScraper";
 import { extractMortgageProducts } from "./productExtraction";
 import { storagePut } from "./storage";
 import {
@@ -88,6 +88,39 @@ export async function runJobSegment(userId: number, jobId: number) {
 export async function createAndRunJob(userId: number, lenderId: number | null, trigger: "manual" | "retry" | "scheduled" | "sheet_sync") {
   const job = await createJob(userId, lenderId, trigger);
   return runJobSegment(userId, job.id);
+}
+
+/** Runs the existing persistence and extraction flow after a user verifies a blocked page in a visible local browser. */
+export async function recoverBlockedLender(userId: number, lenderId: number) {
+  const job = await createJob(userId, lenderId, "retry");
+  const lender = (await listJobTargets(userId, job.id))[0];
+  if (!lender) throw new Error("The selected lender is no longer available for recovery.");
+  const targetUrl = lender.productPageUrl || lender.mainWebsiteUrl;
+  if (!targetUrl) throw new Error("The selected lender has no browser-capturable URL.");
+
+  await setJobRunning(job.id);
+  const attemptId = await createAttempt(lender.id, job.id, targetUrl);
+  await markLenderRunning(lender.id);
+  try {
+    const capture = await captureAfterManualVerification(targetUrl);
+    const safePrefix = `scrapes/lender-${lender.id}/job-${job.id}-${Date.now()}`;
+    const [textAsset, screenshotAsset] = await Promise.all([
+      storagePut(`${safePrefix}.txt`, capture.text, "text/plain; charset=utf-8"),
+      storagePut(`${safePrefix}.png`, capture.screenshot, "image/png"),
+    ]);
+    const extraction = await extractMortgageProducts(lender.name, capture.finalUrl, capture.text);
+    await persistExtractedProducts(userId, lender.id, job.id, extraction.products);
+    await completeAttempt(attemptId, { status: "success", finalUrl: capture.finalUrl, pageTitle: capture.title, pageTextKey: textAsset.key, screenshotKey: screenshotAsset.key });
+    await markLenderResult(lender.id, "success");
+    await updateJobProgress(job.id, { processedLenders: 1, successfulLenders: 1, failedLenders: 0, status: "completed" });
+  } catch (error) {
+    const failure = errorDetails(error);
+    await completeAttempt(attemptId, { status: "failed", errorCategory: failure.category, errorMessage: failure.message });
+    await markLenderResult(lender.id, "failed", failure);
+    await updateJobProgress(job.id, { processedLenders: 1, successfulLenders: 0, failedLenders: 1, status: "completed" });
+    throw error;
+  }
+  return getJob(userId, job.id);
 }
 
 export async function runNextScheduledRefreshSegment(userId: number) {

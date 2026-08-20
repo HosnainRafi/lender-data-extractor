@@ -61,3 +61,9 @@
 - [x] Render a reference workbook from the corrected Chorley parser output and assert its code, rate, LTV, and APRC cells are retained.
 - [x] Capture Chorley through the local browser workflow, save its corrected lender JSON artifact, and inspect grouped code, rate, LTV, and APRC values.
 - [x] Generate and fetch a lender-scoped Chorley workbook through the local artifact route, verifying the downloaded row values match the corrected JSON.
+- [x] Add a local user-assisted blocked-page recovery action that opens a persistent browser session for CAPTCHA completion and then resumes extraction automatically.
+- [x] Keep CAPTCHA recovery explicitly manual: the application must not attempt to solve or bypass challenges.
+- [x] Allow lender intake from one manually entered lender URL, an uploaded CSV/XLSX workbook, or a public spreadsheet/download link.
+- [x] Add flexible column detection and mapping for lender name, main website URL, and product-page URL instead of requiring fixed G/J columns.
+- [x] Add regression tests for manual challenge recovery setup and flexible spreadsheet ingestion, then publish the completed workflow.
+- [ ] Commit and push the manual CAPTCHA recovery and flexible CSV/XLSX/public-link import workflow to GitHub, then save a restorable checkpoint.
